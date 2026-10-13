@@ -228,3 +228,51 @@ test("ambiguity: rules separated by priority or specificity are not reported", (
   });
   assert.deepEqual(findAmbiguousRules(config), []);
 });
+
+// --- Sign-in pages ---------------------------------------------------------
+
+const everywhere = routing({
+  rules: [
+    rule("google", "google.com", { priority: 9 }),
+    rule("microsoft", "microsoftonline.com", { priority: 9 }),
+    rule("live", "live.com", { priority: 9 }),
+    rule("github", "github.com", { priority: 9 })
+  ]
+});
+
+test("sign-in: known provider sign-in pages are never routed", () => {
+  for (const [url, provider] of [
+    ["https://accounts.google.com/v3/signin/identifier?continue=https://claude.ai", "Google"],
+    ["https://accounts.google.com/o/oauth2/v2/auth?client_id=x", "Google"],
+    ["https://login.microsoftonline.com/common/oauth2/v2.0/authorize", "Microsoft"],
+    ["https://login.live.com/oauth20_authorize.srf", "Microsoft"],
+    ["https://github.com/login", "GitHub"],
+    ["https://github.com/login/oauth/authorize?client_id=x", "GitHub"],
+    ["https://www.github.com/login/device", "GitHub"],
+    ["https://github.com/session", "GitHub"]
+  ]) {
+    assert.deepEqual(matchUrl(url, everywhere), { kind: "auth", provider }, url);
+  }
+});
+
+test("sign-in: the guard beats a one-time override and the fallback", () => {
+  const decision = matchUrl("https://accounts.google.com/signin", drupal, { overrideDestinationId: "dest-other" });
+  assert.deepEqual(decision, { kind: "auth", provider: "Google" });
+});
+
+test("sign-in: look-alikes and ordinary pages on provider domains are routed normally", () => {
+  for (const url of [
+    "https://mail.google.com/mail/u/0/",
+    "https://accounts.google.com.evil.example/signin",
+    "https://evil.example/accounts.google.com/signin",
+    "https://evil.example/login",
+    "https://evil.example/oauth/authorize",
+    "https://github.com/loginator",
+    "https://github.com/someone/login",
+    "https://github.com/sessions/two-factor",
+    "https://github.com/copilot",
+    "https://graph.microsoft.com/login"
+  ]) {
+    assert.notEqual(matchUrl(url, everywhere).kind, "auth", url);
+  }
+});

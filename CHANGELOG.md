@@ -26,6 +26,9 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   match whole segments, and precedence is one-time override, priority,
   specificity, then fallback. Tied rules in different categories are
   reported as ambiguous.
+- Never route known sign-in pages (Google, Microsoft, GitHub), so a
+  sign-in stays in the container it started in. Coverage is listed in
+  `docs/routing.md`.
 
 ### Refactoring
 

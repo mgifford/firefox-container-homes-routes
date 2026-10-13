@@ -2,6 +2,7 @@
 // destination a link should open in, and explain why.
 //
 // Precedence, highest first:
+//   0. Known sign-in pages (auth-endpoints.js) are never routed.
 //   1. One-time override chosen by the user for this link.
 //   2. Matching rules, by priority (higher number wins).
 //   3. Among equal priority, the most specific rule:
@@ -19,6 +20,8 @@
 // A leading "www." is ignored on both sides. Ports are ignored. Path
 // prefixes match whole segments: /project/claro matches
 // /project/claro/issues/1 but not /project/claroline.
+
+import { AUTH_ENDPOINTS } from "./auth-endpoints.js";
 
 const ROUTABLE_PROTOCOLS = ["http:", "https:"];
 
@@ -78,8 +81,15 @@ function parseRoutable(url) {
   return ROUTABLE_PROTOCOLS.includes(parsed.protocol) ? parsed : null;
 }
 
+function authEndpointFor(urlHost, pathname) {
+  return AUTH_ENDPOINTS.find(
+    (endpoint) => hostMatches(endpoint, urlHost) && pathMatches(endpoint, pathname)
+  );
+}
+
 // Returns a decision:
 //   { kind: "unsupported" }                     not an http(s) URL
+//   { kind: "auth", provider }                  a sign-in page: stays put
 //   { kind: "override", destinationId }
 //   { kind: "rule", destinationId, rule, category, ambiguousWith }
 //   { kind: "fallback", destinationId }
@@ -90,6 +100,10 @@ export function matchUrl(url, routing, { overrideDestinationId } = {}) {
   const parsed = parseRoutable(url);
   if (!parsed) return { kind: "unsupported" };
 
+  const urlHost = siteHost(parsed.hostname);
+  const authEndpoint = authEndpointFor(urlHost, parsed.pathname);
+  if (authEndpoint) return { kind: "auth", provider: authEndpoint.provider };
+
   const destinationIds = new Set(routing.destinations.map((d) => d.id));
 
   if (overrideDestinationId !== undefined && destinationIds.has(overrideDestinationId)) {
@@ -97,7 +111,6 @@ export function matchUrl(url, routing, { overrideDestinationId } = {}) {
   }
 
   const categories = new Map(routing.categories.map((c) => [c.id, c]));
-  const urlHost = siteHost(parsed.hostname);
 
   // Array.prototype.sort is stable, so ties keep their config order.
   const candidates = routing.rules
