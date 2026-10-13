@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and commit
 messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
+## Unreleased (Container Homes Routes fork)
+
+### Chores
+
+- Fork as "Container Homes Routes" with its own extension ID
+  (`container-homes-routes@mgifford.github.io`) and homepage, so a
+  development install is distinguishable from upstream Container Homes.
+  Behaviour is unchanged.
+
 ## [0.5.0] - 2026-08-21
 
 ### Features
