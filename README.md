@@ -127,6 +127,11 @@ npm start       # run in a temporary Firefox profile
 npm run build   # produce an unsigned .zip in web-ext-artifacts/
 ```
 
+Before merging changes that touch tabs, containers, storage or the options
+page, run the checklist in
+[docs/manual-verification.md](docs/manual-verification.md) in a temporary
+Firefox profile.
+
 > `npm start` needs a Firefox binary that `web-ext` can open a debugger
 > connection to. It does not work with Ubuntu's Firefox *snap* package, which
 > sandboxes `/tmp` and blocks the connection — use the manual
