@@ -12,14 +12,21 @@ const CONTAINERS = [
   { cookieStoreId: PERSONAL, name: "Personal", color: "turquoise" }
 ];
 
-test("install stores a config version only when none exists", async () => {
+test("install and update migrate stored settings to the current version", async () => {
   const fresh = await loadBackground();
   await fresh.browser.runtime.onInstalled.fire({});
-  assert.equal(fresh.browser.storage.local.data.configVersion, 1);
+  assert.equal(fresh.browser.storage.local.data.configVersion, 2);
+  assert.deepEqual(fresh.browser.storage.local.data.containerBindings, {});
 
-  const existing = await loadBackground({ local: { configVersion: 7 } });
-  await existing.browser.runtime.onInstalled.fire({});
-  assert.equal(existing.browser.storage.local.data.configVersion, 7);
+  const homes = { [WORK]: "https://work.example/" };
+  const updated = await loadBackground({ local: { configVersion: 1, homes } });
+  await updated.browser.runtime.onInstalled.fire({});
+  assert.equal(updated.browser.storage.local.data.configVersion, 2);
+  assert.deepEqual(updated.browser.storage.local.data.homes, homes);
+
+  const newer = await loadBackground({ local: { configVersion: 7 } });
+  await newer.browser.runtime.onInstalled.fire({});
+  assert.deepEqual(newer.browser.storage.local.data, { configVersion: 7 }, "newer config left untouched");
 });
 
 test("home: toolbar and shortcut load the current container's home URL", async () => {

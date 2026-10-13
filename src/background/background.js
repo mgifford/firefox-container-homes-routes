@@ -1,9 +1,16 @@
-const CONFIG_VERSION = 1;
+import { MIGRATION_KEYS, migrateConfig } from "../config/schema.js";
 
 browser.runtime.onInstalled.addListener(async () => {
-  const { configVersion } = await browser.storage.local.get("configVersion");
-  if (configVersion === undefined) {
-    await browser.storage.local.set({ configVersion: CONFIG_VERSION });
+  const stored = await browser.storage.local.get(MIGRATION_KEYS);
+  const { updates, error } = migrateConfig(stored);
+
+  if (error) {
+    console.warn(`Container Homes: not migrating settings: ${error}`);
+    return;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await browser.storage.local.set(updates);
   }
 });
 
