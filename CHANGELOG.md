@@ -16,6 +16,10 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
 
 ### Features
 
+- Home and slot URL fields accept a bare domain such as `drupal.org`
+  (or `drupal.org/project/claro`) and add `https://`. Addresses with a
+  scheme, including `http://`, are kept as typed.
+
 - Add configuration version 2: a portable `routing` section (account
   contexts, destinations, categories, rules, fallback destination) and a
   local-only `containerBindings` map. Existing settings migrate on install

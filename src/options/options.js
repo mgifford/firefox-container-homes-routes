@@ -1,3 +1,5 @@
+import { normalizeUrl } from "./url.js";
+
 const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const SCHEMA_VERSION = 1;
 
@@ -24,10 +26,14 @@ function addRow(section, labelText, name, value) {
   labelSpan.textContent = labelText;
   labelSpan.className = "row-label";
 
-  input.type = "url";
+  // Text rather than type="url", so a bare domain like drupal.org is accepted.
+  input.type = "text";
+  input.inputMode = "url";
+  input.spellcheck = false;
+  input.className = "url-input";
   input.name = name;
   input.value = value || "";
-  input.placeholder = "https://example.org/";
+  input.placeholder = "example.org";
   input.autocomplete = "off";
 
   label.className = "row";
@@ -133,14 +139,14 @@ form.addEventListener("submit", async (event) => {
   const homes = {};
   const slots = {};
 
-  for (const input of form.querySelectorAll('input[type="url"]')) {
+  for (const input of form.querySelectorAll(".url-input")) {
     const url = input.value.trim();
 
     if (!url) continue;
 
     let href;
     try {
-      href = new URL(url).href;
+      href = normalizeUrl(url);
     } catch {
       status.textContent = `Not a valid URL: ${url}`;
       return;
@@ -159,6 +165,10 @@ form.addEventListener("submit", async (event) => {
   const autoGroupNewTabs = form.querySelector('input[name="autoGroupNewTabs"]').checked;
 
   await browser.storage.local.set({ homes, slots, autoGroupNewTabs });
+  // Show what was stored, such as https:// added to a bare domain.
+  for (const input of form.querySelectorAll(".url-input")) {
+    if (input.value.trim()) input.value = normalizeUrl(input.value);
+  }
   status.textContent = "Saved.";
   saveButton.disabled = true;
 });
