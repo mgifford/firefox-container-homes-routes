@@ -1,3 +1,4 @@
+import { findContainerId } from "./import-match.js";
 import { normalizeUrl } from "./url.js";
 
 const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -214,10 +215,13 @@ exportButton.addEventListener("click", async () => {
   URL.revokeObjectURL(url);
 });
 
-// Turns a parsed export file into { homes, slots }, or throws an Error
-// describing the first problem found. Nothing is stored unless the whole
-// file validates, so a bad file can't leave a half-imported config.
-function parseImport(data) {
+// Turns a parsed export file into { homes, slots, imported, skipped }, or
+// throws an Error describing the first problem found. Nothing is stored
+// unless the whole file validates, so a bad file can't leave a
+// half-imported config. Entries are matched to this install's containers
+// by findContainerId; the names of entries with no single match are listed
+// in skipped and their settings are left out.
+function parseImport(data, containers) {
   if (
     !data ||
     data.schemaVersion !== SCHEMA_VERSION ||
@@ -228,6 +232,8 @@ function parseImport(data) {
 
   const homes = {};
   const slots = {};
+  let imported = 0;
+  const skipped = [];
 
   for (const container of data.containers) {
     const cookieStoreId = container?.cookieStoreId;
@@ -235,9 +241,10 @@ function parseImport(data) {
       throw new Error("a container entry has no cookieStoreId.");
     }
 
-    if (container.homeUrl) {
-      homes[cookieStoreId] = parseImportedUrl(container.homeUrl, cookieStoreId);
-    }
+    const homeUrl = container.homeUrl
+      ? parseImportedUrl(container.homeUrl, cookieStoreId)
+      : undefined;
+    const containerSlots = {};
 
     if (container.slots !== undefined) {
       if (typeof container.slots !== "object" || container.slots === null) {
@@ -248,13 +255,21 @@ function parseImport(data) {
         if (!SLOT_NUMBERS.includes(Number(slotNumber))) {
           throw new Error(`${cookieStoreId} has an unknown slot "${slotNumber}".`);
         }
-        slots[cookieStoreId] ??= {};
-        slots[cookieStoreId][slotNumber] = parseImportedUrl(url, cookieStoreId);
+        containerSlots[slotNumber] = parseImportedUrl(url, cookieStoreId);
       }
     }
+
+    const targetId = findContainerId(container, containers);
+    if (!targetId) {
+      skipped.push(typeof container.label === "string" ? container.label : cookieStoreId);
+      continue;
+    }
+    imported += 1;
+    if (homeUrl) homes[targetId] = homeUrl;
+    if (Object.keys(containerSlots).length > 0) slots[targetId] = containerSlots;
   }
 
-  return { homes, slots };
+  return { homes, slots, imported, skipped };
 }
 
 function parseImportedUrl(url, cookieStoreId) {
@@ -284,18 +299,23 @@ importInput.addEventListener("change", async () => {
     return;
   }
 
+  const containers = await browser.contextualIdentities.query({});
   let homes;
   let slots;
+  let imported;
+  let skipped;
   try {
-    ({ homes, slots } = parseImport(data));
+    ({ homes, slots, imported, skipped } = parseImport(data, containers));
   } catch (error) {
     status.textContent = `Could not import: ${error.message}`;
     return;
   }
 
-  const confirmed = confirm(
-    `Replace all current settings with the ${data.containers.length} container(s) in this file?`
-  );
+  let question = `Replace all current settings with the ${imported} container(s) in this file?`;
+  if (skipped.length > 0) {
+    question += `\n\n${skipped.length} container(s) will be skipped because no single container here has that name: ${skipped.join(", ")}`;
+  }
+  const confirmed = confirm(question);
   if (!confirmed) return;
 
   await browser.storage.local.set({ homes, slots });

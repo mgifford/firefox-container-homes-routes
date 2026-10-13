@@ -54,6 +54,8 @@ Then, in the temporary profile:
 | 2.3 | Enter `not a url` in a field and click **Save**. | Saving is blocked; nothing changes. | |
 | 2.4 | Click **Export config…**. | A `container-homes-config.json` file downloads with your URLs. | |
 | 2.5 | Click **Import config…**, choose the exported file, accept the prompt. | "Imported." appears; the values are unchanged. | |
+| 2.5a | In a second Firefox profile (or after removing and recreating containers so their ids change), create containers with the same names as in the exported file. Import the file. | The prompt counts every container; "Imported." appears and each home URL and slot is on the container with the same name. | |
+| 2.5b | Edit the exported file: rename one container's `label` to a name you don't have, and give another the name of a container that appears twice (create two with the same name first). Import it. | The prompt says 2 containers will be skipped and lists both names. After accepting, the other containers are imported and the two listed ones are not. | |
 | 2.6 | Using only the keyboard, Tab through the page. | Every control can be reached and shows a visible focus indicator, including **Import config…**, which opens the file picker with Enter or Space. | |
 
 ### Home URL
