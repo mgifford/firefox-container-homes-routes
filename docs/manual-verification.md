@@ -107,6 +107,18 @@ bound.
 | 7.10 | Reload the add-on (`about:debugging`, **Reload**), then repeat 7.2. | The items appear once, not duplicated, with up-to-date text. | |
 | 7.11 | Restart Firefox (needs an installed build, not a temporary add-on). | The menu items are still present after the restart. | |
 
+### Routing settings page
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 8.1 | In Preferences, click **Routing settings…**. | The routing settings page opens in a new tab. | |
+| 8.2 | Before loading a routing config, look at the page. | It says no routing is set up yet. | |
+| 8.3 | Load the demo config (`docs/demo/README.md`) with the page open. | The page updates without a reload: the tables fill in and the check says "No problems found." | |
+| 8.4 | Enter a Claro issue link in **Link to test** and press Enter. | "Opens in the Drupal container." with the rule, category, destination, account and container listed. | |
+| 8.5 | With a screen reader on, repeat 8.4 with a Claude link. | The new one-line result is announced without moving focus. | |
+| 8.6 | Remove the Drupal container in Settings. | The Destinations table shows a problem for Drupal, and testing a Claro link explains it. | |
+| 8.7 | Zoom to 400% (or a 320px-wide window). | No sideways scrolling; table text wraps between words. | |
+
 ### Accessibility of the options page
 
 | # | Step | Expected | Result |

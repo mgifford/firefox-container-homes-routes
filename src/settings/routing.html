@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Routing settings – Container Homes Routes</title>
+  <link rel="stylesheet" href="routing.css">
+</head>
+<body>
+  <main>
+    <h1>Routing settings</h1>
+    <p>
+      Routing decides which container a link opens in when you choose
+      <strong>Open routed link</strong> from its context menu. Editing is
+      coming soon; for now this page shows your setup and explains where
+      any link would go.
+    </p>
+
+    <section aria-labelledby="test-heading">
+      <h2 id="test-heading">Test a link</h2>
+      <form id="test-form">
+        <label for="test-url">Link to test</label>
+        <input id="test-url" name="url" type="url" required
+               placeholder="https://www.drupal.org/project/claro/issues/3565271"
+               autocomplete="off" spellcheck="false">
+        <button type="submit">Explain</button>
+      </form>
+      <p id="test-summary" role="status"></p>
+      <dl id="test-details"></dl>
+      <p id="test-problem" class="problem" hidden></p>
+    </section>
+
+    <section aria-labelledby="check-heading">
+      <h2 id="check-heading">Configuration check</h2>
+      <ul id="check-results"></ul>
+    </section>
+
+    <section aria-labelledby="setup-heading">
+      <h2 id="setup-heading">Current setup</h2>
+      <div id="setup"></div>
+    </section>
+  </main>
+
+  <script type="module" src="routing.js"></script>
+</body>
+</html>

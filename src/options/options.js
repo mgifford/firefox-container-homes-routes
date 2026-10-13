@@ -257,6 +257,10 @@ function parseImportedUrl(url, cookieStoreId) {
 }
 importButton.addEventListener("click", () => importInput.click());
 
+document.querySelector("#open-routing").addEventListener("click", () => {
+  browser.tabs.create({ url: browser.runtime.getURL("src/settings/routing.html") });
+});
+
 importInput.addEventListener("change", async () => {
   const [file] = importInput.files;
   importInput.value = "";

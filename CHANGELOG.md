@@ -37,6 +37,10 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   link in" submenu for a one-time choice of destination. The menu text
   says where the link will open, or what to fix when it can't be routed.
   Hidden in private windows. Adds the `menus` permission.
+- Add a Routing settings page (opened from Preferences) that explains
+  where any link would open and why, checks the configuration for
+  problems, conflicting rules and containers shared between accounts,
+  and shows the current setup. Editing comes next.
 
 ### Refactoring
 
