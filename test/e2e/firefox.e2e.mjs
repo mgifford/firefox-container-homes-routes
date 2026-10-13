@@ -10,7 +10,7 @@
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, openSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -30,6 +30,8 @@ const WAIT = 10_000;
 
 let driver;
 let buildDir;
+// geckodriver's and Firefox's stdout and stderr.
+let firefoxLog;
 // Console errors already reported, so each check sees only new ones.
 const seenErrors = new Set();
 
@@ -45,12 +47,16 @@ before(async () => {
     .addArguments("-headless")
     .windowSize({ width: 1280, height: 1024 })
     .setPreference("extensions.webextensions.uuids", JSON.stringify({ [ADDON_ID]: UUID }))
-    .setPreference("privacy.userContext.enabled", true);
+    .setPreference("privacy.userContext.enabled", true)
+    // Prints page console messages, including extension pages', to stdout.
+    .setPreference("devtools.console.stdout.content", true);
   if (process.env.FIREFOX_BIN) options.setBinary(process.env.FIREFOX_BIN);
 
   // System access lets the tests open moz-extension:// pages, which
   // Marionette refuses to navigate to otherwise, and read Firefox's console.
-  const service = new firefox.ServiceBuilder().addArguments("--allow-system-access");
+  firefoxLog = join(buildDir, "firefox.log");
+  const logFd = openSync(firefoxLog, "a");
+  const service = new firefox.ServiceBuilder().addArguments("--allow-system-access").setStdio(["ignore", logFd, logFd]);
   driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).setFirefoxService(service).build();
   await driver.installAddon(zip, true);
 });
@@ -183,6 +189,15 @@ test("the console collector sees errors from extension pages", async () => {
   await newConsoleErrors();
   await inPage("win.console.error('e2e probe'); return null;");
   const errors = await newConsoleErrors();
+  // Experiment: show what Firefox printed, to see whether page console
+  // output from extension pages reaches stdout.
+  await inPage("win.setTimeout(() => { throw new Error('e2e uncaught probe'); }, 0); return null;");
+  await driver.sleep(1000);
+  const lines = readFileSync(firefoxLog, "utf8").split("\n");
+  console.log("--- Firefox output: lines mentioning the probe or moz-extension ---");
+  for (const line of lines) if (/e2e|moz-extension|console\.|JavaScript error/i.test(line)) console.log(line);
+  console.log(`--- Firefox output: last 40 of ${lines.length} lines ---`);
+  console.log(lines.slice(-40).join("\n"));
   if (!errors.some((entry) => entry.includes("e2e probe"))) {
     await driver.setContext(firefox.Context.CHROME);
     const diag = await driver.executeScript(
