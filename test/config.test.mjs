@@ -35,9 +35,9 @@ function validRouting() {
       {
         id: "rule-claro",
         categoryId: "cat-claro",
-        host: "www.drupal.org",
-        includeSubdomains: false,
-        pathPrefix: "/project/claro/issues/",
+        host: "drupal.org",
+        includeSubdomains: true,
+        pathPrefix: "/project/claro/issues",
         priority: 0
       },
       { id: "rule-claude", categoryId: "cat-ai", host: "claude.ai", includeSubdomains: false, priority: 0 }
