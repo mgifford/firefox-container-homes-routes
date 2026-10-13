@@ -5,6 +5,7 @@ const form = document.querySelector("#config");
 const status = document.querySelector("#status");
 const exportButton = document.querySelector("#export");
 const importInput = document.querySelector("#import");
+const importButton = document.querySelector("#import-button");
 const saveButton = document.createElement("button");
 
 function homeInputName(cookieStoreId) {
@@ -202,6 +203,8 @@ exportButton.addEventListener("click", async () => {
   link.click();
   URL.revokeObjectURL(url);
 });
+
+importButton.addEventListener("click", () => importInput.click());
 
 importInput.addEventListener("change", async () => {
   const [file] = importInput.files;
