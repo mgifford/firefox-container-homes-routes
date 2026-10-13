@@ -2,6 +2,7 @@
   "name": "container-homes-routes",
   "version": "0.5.0",
   "private": true,
+  "type": "module",
   "description": "Development fork of Container Homes: set a home URL and up to 9 app slots per Firefox container. Project and account routing is in progress.",
   "license": "MIT",
   "scripts": {

@@ -13,17 +13,17 @@ const CONTAINERS = [
 ];
 
 test("install stores a config version only when none exists", async () => {
-  const fresh = loadBackground();
+  const fresh = await loadBackground();
   await fresh.browser.runtime.onInstalled.fire({});
   assert.equal(fresh.browser.storage.local.data.configVersion, 1);
 
-  const existing = loadBackground({ local: { configVersion: 7 } });
+  const existing = await loadBackground({ local: { configVersion: 7 } });
   await existing.browser.runtime.onInstalled.fire({});
   assert.equal(existing.browser.storage.local.data.configVersion, 7);
 });
 
 test("home: toolbar and shortcut load the current container's home URL", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://elsewhere.example/" }],
     local: { homes: { [WORK]: "https://work.example/" } }
   });
@@ -37,7 +37,7 @@ test("home: toolbar and shortcut load the current container's home URL", async (
 });
 
 test("home: does nothing when the container has no home URL", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: PERSONAL, url: "https://stay.example/" }],
     local: { homes: { [WORK]: "https://work.example/" } }
   });
@@ -47,14 +47,14 @@ test("home: does nothing when the container has no home URL", async () => {
 });
 
 test("slot: unconfigured slot opens nothing", async () => {
-  const bg = loadBackground({ tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://a.example/" }] });
+  const bg = await loadBackground({ tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://a.example/" }] });
 
   await bg.command("open-slot-3");
   assert.equal(bg.state.tabs.length, 1);
 });
 
 test("slot: focuses an open tab on the slot's origin in the same container only", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [
       { id: 1, active: true, cookieStoreId: WORK, url: "https://current.example/" },
       { id: 2, cookieStoreId: PERSONAL, url: "https://mail.example/inbox" },
@@ -72,7 +72,7 @@ test("slot: focuses an open tab on the slot's origin in the same container only"
 });
 
 test("slot: reuses an empty active tab instead of opening a new one", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "about:newtab" }],
     local: { slots: { [WORK]: { 2: "https://chat.example/" } } }
   });
@@ -84,7 +84,7 @@ test("slot: reuses an empty active tab instead of opening a new one", async () =
 });
 
 test("slot: opens a new tab in the current container when nothing matches", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://current.example/" }],
     local: { slots: { [WORK]: { 1: "https://mail.example/" } } }
   });
@@ -98,7 +98,7 @@ test("slot: opens a new tab in the current container when nothing matches", asyn
 });
 
 test("slot: stays bound to its tab after that tab navigates elsewhere", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://current.example/" }],
     local: { slots: { [WORK]: { 1: "https://mail.example/" } } }
   });
@@ -115,7 +115,7 @@ test("slot: stays bound to its tab after that tab navigates elsewhere", async ()
 });
 
 test("slot: a repointed slot URL ignores the old binding", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://current.example/" }],
     local: { slots: { [WORK]: { 1: "https://old.example/" } } }
   });
@@ -133,7 +133,7 @@ test("slot: a repointed slot URL ignores the old binding", async () => {
 });
 
 test("slot: closing the bound tab forgets the binding", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, url: "https://current.example/" }],
     local: { slots: { [WORK]: { 1: "https://mail.example/" } } }
   });
@@ -147,7 +147,7 @@ test("slot: closing the bound tab forgets the binding", async () => {
 });
 
 test("open-tab-in-group: new tab sits next to the current one, same container and group", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [
       { id: 1, cookieStoreId: WORK, url: "https://a.example/", groupId: 100 },
       { id: 2, active: true, cookieStoreId: WORK, url: "https://b.example/", groupId: 100 },
@@ -165,7 +165,7 @@ test("open-tab-in-group: new tab sits next to the current one, same container an
 });
 
 test("focus-next-group / focus-previous-group: move between groups and wrap", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     tabs: [
       { id: 1, groupId: 100, active: true },
       { id: 2, groupId: 100 },
@@ -196,7 +196,7 @@ test("focus-next-group / focus-previous-group: move between groups and wrap", as
 });
 
 test("group-tabs-by-container: one group per container, slot tabs first, pinned tabs untouched", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     containers: CONTAINERS,
     tabs: [
       { id: 1, pinned: true, cookieStoreId: WORK, url: "https://pinned.example/" },
@@ -225,7 +225,7 @@ test("group-tabs-by-container: one group per container, slot tabs first, pinned 
 });
 
 test("auto-group new tabs: off by default", async () => {
-  const bg = loadBackground({ containers: CONTAINERS, tabs: [{ id: 1, active: true }] });
+  const bg = await loadBackground({ containers: CONTAINERS, tabs: [{ id: 1, active: true }] });
 
   await bg.browser.tabs.create({ cookieStoreId: WORK });
   await settle();
@@ -234,7 +234,7 @@ test("auto-group new tabs: off by default", async () => {
 });
 
 test("auto-group new tabs: when enabled, joins the container's existing group", async () => {
-  const bg = loadBackground({
+  const bg = await loadBackground({
     containers: CONTAINERS,
     tabs: [{ id: 1, active: true, cookieStoreId: WORK, groupId: 100 }],
     local: { autoGroupNewTabs: true }
