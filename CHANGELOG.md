@@ -14,6 +14,14 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   Behaviour is unchanged.
 - Add a behavioural test harness (`npm test`) and a CI workflow.
 
+### Features
+
+- Add configuration version 2: a portable `routing` section (account
+  contexts, destinations, categories, rules, fallback destination) and a
+  local-only `containerBindings` map. Existing settings migrate on install
+  or update without changes to home URLs, slots or preferences. Nothing
+  uses the routing data yet.
+
 ### Refactoring
 
 - Load the background script as an ES module, so routing code can be
