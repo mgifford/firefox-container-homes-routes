@@ -122,10 +122,16 @@ No data leaves your device.
 
 ```sh
 npm install
+npm test        # behavioural tests (Node's built-in test runner)
 npm run lint    # validate manifest.json and extension source
 npm start       # run in a temporary Firefox profile
 npm run build   # produce an unsigned .zip in web-ext-artifacts/
 ```
+
+`npm test` runs the unmodified background script against an in-memory
+stand-in for the Firefox APIs (`test/helpers/fake-browser.mjs`). It checks
+the extension's own logic, not Firefox: real container isolation, tab and
+storage behaviour still need checking by hand in Firefox.
 
 > `npm start` needs a Firefox binary that `web-ext` can open a debugger
 > connection to. It does not work with Ubuntu's Firefox *snap* package, which

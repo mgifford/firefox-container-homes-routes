@@ -5,10 +5,16 @@
   "description": "Development fork of Container Homes: set a home URL and up to 9 app slots per Firefox container. Project and account routing is in progress.",
   "license": "MIT",
   "scripts": {
+    "test": "node --test test/*.test.mjs",
     "lint": "web-ext lint",
     "start": "web-ext run",
     "build": "web-ext build",
     "sign": "web-ext sign --channel unlisted"
+  },
+  "webExt": {
+    "ignoreFiles": [
+      "test"
+    ]
   },
   "devDependencies": {
     "web-ext": "^10.6.0"
