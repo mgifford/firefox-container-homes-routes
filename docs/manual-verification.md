@@ -117,7 +117,14 @@ bound.
 | 8.4 | Enter a Claro issue link in **Link to test** and press Enter. | "Opens in the Drupal container." with the rule, category, destination, account and container listed. | |
 | 8.5 | With a screen reader on, repeat 8.4 with a Claude link. | The new one-line result is announced without moving focus. | |
 | 8.6 | Remove the Drupal container in Settings. | The Destinations table shows a problem for Drupal, and testing a Claro link explains it. | |
-| 8.7 | Zoom to 400% (or a 320px-wide window). | No sideways scrolling; table text wraps between words. | |
+| 8.7 | Zoom to 400% (or a 320px-wide window). | The page does not scroll sideways; a table too wide to fit scrolls inside its own area. Table text wraps between words. | |
+| 8.8 | Under **Add an account**, press **Add account** with the name empty, then with "work". | Focus returns to Name with "Enter a name." and then "Another account is already called "Work"." | |
+| 8.9 | Add an account "Client A", then **Edit** it, rename it "Client B" and press Enter. | Each result is announced. After saving, focus returns to its **Edit** button. **Cancel** also returns focus there. | |
+| 8.10 | **Remove** the Work account. | Refused: it still has destinations, which are named. Nothing changes. | |
+| 8.11 | Add a destination "Client site" for Client B with container **New container**. | A container named "Client site" appears in Firefox's container settings; the table shows it. The check still says "No problems found." | |
+| 8.12 | **Edit** Client site and choose the Drupal container. | Saved with a warning that the container is also used by another account; the configuration check shows the same warning. | |
+| 8.13 | **Remove** the Drupal destination, then Client site. | Drupal is refused (its categories are named). Client site is removed and focus moves to the Destinations heading. The "Client site" container is still in Firefox. | |
+| 8.14 | Right-click a Claro issue link after 8.12. | "Open routed link" still works; routing uses the edited setup without a reload. | |
 
 ### Accessibility of the options page
 
