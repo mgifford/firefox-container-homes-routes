@@ -6,6 +6,10 @@ groups tabs, or stores settings. Run this checklist in a real Firefox
 before merging a change that touches tabs, containers, storage or the
 options page.
 
+`npm run test:e2e` covers some of this in a real headless Firefox (see
+[e2e-tests.md](e2e-tests.md)). It cannot click Firefox's right-click
+menu, so the "Open routed link" steps below are manual only.
+
 Record the Firefox version, operating system and date, and mark each step
 pass, fail or not run. Paste the filled-in table into the pull request.
 
@@ -88,6 +92,9 @@ Then, in the temporary profile:
 | 5.6 | Untick the option, save, open a new Work tab. | The new tab is not grouped. | |
 
 ### Open routed link
+
+These steps are manual only: WebDriver, which the end-to-end tests use,
+cannot open or click Firefox's native context menu.
 
 Load the demo routing config first (`docs/demo/README.md`), so the
 Drupal, Personal AI, Work development and Misc containers exist and are

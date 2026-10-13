@@ -33,3 +33,26 @@ jobs:
 
       - name: Build extension
         run: npm run build
+
+  e2e:
+    name: End-to-end (headless Firefox)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ubuntu-latest ships Firefox; Selenium Manager finds it and geckodriver.
+      - name: Show Firefox version
+        run: firefox --version
+
+      - name: Run end-to-end tests
+        run: npm run test:e2e

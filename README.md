@@ -126,6 +126,7 @@ No data leaves your device.
 ```sh
 npm install
 npm test        # behavioural tests (Node's built-in test runner)
+npm run test:e2e # end-to-end tests in headless Firefox
 npm run lint    # validate manifest.json and extension source
 npm start       # run in a temporary Firefox profile
 npm run build   # produce an unsigned .zip in web-ext-artifacts/
@@ -135,6 +136,11 @@ npm run build   # produce an unsigned .zip in web-ext-artifacts/
 stand-in for the Firefox APIs (`test/helpers/fake-browser.mjs`). It checks
 the extension's own logic, not Firefox: real container isolation, tab and
 storage behaviour still need checking by hand in Firefox.
+
+`npm run test:e2e` runs the add-on in a real headless Firefox and checks
+storage, container creation, the routing settings and options pages, and
+axe-core accessibility results. See [docs/e2e-tests.md](docs/e2e-tests.md)
+for what it covers and what it does not.
 
 Before merging changes that touch tabs, containers, storage or the options
 page, run the checklist in
