@@ -54,7 +54,7 @@ Then, in the temporary profile:
 | 2.3 | Enter `not a url` in a field and click **Save**. | Saving is blocked; nothing changes. | |
 | 2.4 | Click **Export config…**. | A `container-homes-config.json` file downloads with your URLs. | |
 | 2.5 | Click **Import config…**, choose the exported file, accept the prompt. | "Imported." appears; the values are unchanged. | |
-| 2.6 | Using only the keyboard, Tab through the page. | Every control can be reached and shows a visible focus indicator. Known issue: Import is not reachable by keyboard until upstream PR rolfkleef/firefox-container-homes#5 is merged. | |
+| 2.6 | Using only the keyboard, Tab through the page. | Every control can be reached and shows a visible focus indicator, including **Import config…**, which opens the file picker with Enter or Space. | |
 
 ### Home URL
 
