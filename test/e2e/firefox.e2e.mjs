@@ -43,7 +43,9 @@ before(async () => {
   const zip = join(buildDir, readdirSync(buildDir).find((name) => name.endsWith(".zip")));
 
   const options = new firefox.Options()
-    .addArguments("-headless")
+    // System access lets the tests open moz-extension:// pages; Marionette
+    // refuses that navigation otherwise.
+    .addArguments("-headless", "-remote-allow-system-access")
     .windowSize({ width: 1280, height: 1024 })
     .setPreference("extensions.webextensions.uuids", JSON.stringify({ [ADDON_ID]: UUID }))
     .setPreference("privacy.userContext.enabled", true)
@@ -86,7 +88,24 @@ async function inPage(body, args = null) {
 }
 
 async function open(url) {
-  await driver.get(url);
+  try {
+    await driver.get(url);
+  } catch (error) {
+    if (error.name !== "UnsupportedOperationError") throw error;
+    // Load it from the browser chrome instead, as a privileged navigation.
+    await driver.setContext(firefox.Context.CHROME);
+    try {
+      await driver.executeScript(
+        `gBrowser.selectedBrowser.fixupAndLoadURIString(arguments[0], {
+           triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()
+         });`,
+        url
+      );
+    } finally {
+      await driver.setContext(firefox.Context.CONTENT);
+    }
+    await driver.wait(async () => (await driver.getCurrentUrl()) === url, WAIT, `did not open ${url}`);
+  }
   await driver.wait(async () => (await driver.executeScript("return document.readyState")) === "complete", WAIT);
 }
 
