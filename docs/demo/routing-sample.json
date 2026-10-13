@@ -1,0 +1,67 @@
+{
+  "description": "Demo routing config for Container Homes Routes. Load it with the console snippet in docs/demo/README.md.",
+  "containerNames": {
+    "dest-drupal": "Drupal",
+    "dest-personal-ai": "Personal AI",
+    "dest-work-dev": "Work development",
+    "dest-misc": "Misc"
+  },
+  "routing": {
+    "accountContexts": [
+      { "id": "ctx-personal", "label": "Personal" },
+      { "id": "ctx-work", "label": "Work" }
+    ],
+    "destinations": [
+      { "id": "dest-drupal", "label": "Drupal", "accountContextId": "ctx-personal", "browser": "firefox" },
+      { "id": "dest-personal-ai", "label": "Personal AI", "accountContextId": "ctx-personal", "browser": "firefox" },
+      { "id": "dest-work-dev", "label": "Work development", "accountContextId": "ctx-work", "browser": "firefox" },
+      { "id": "dest-misc", "label": "Misc", "accountContextId": "ctx-personal", "browser": "firefox" }
+    ],
+    "categories": [
+      { "id": "cat-claro", "label": "Claro", "destinationIds": ["dest-drupal"], "defaultDestinationId": "dest-drupal" },
+      { "id": "cat-drupal-core", "label": "Drupal Core", "destinationIds": ["dest-drupal"], "defaultDestinationId": "dest-drupal" },
+      { "id": "cat-drupal-general", "label": "Drupal general", "destinationIds": ["dest-drupal"], "defaultDestinationId": "dest-drupal" },
+      {
+        "id": "cat-claude",
+        "label": "Claude",
+        "destinationIds": ["dest-personal-ai", "dest-work-dev"],
+        "defaultDestinationId": "dest-personal-ai"
+      },
+      {
+        "id": "cat-copilot",
+        "label": "GitHub Copilot",
+        "destinationIds": ["dest-work-dev", "dest-personal-ai"],
+        "defaultDestinationId": "dest-work-dev"
+      }
+    ],
+    "rules": [
+      {
+        "id": "rule-claro-issues",
+        "categoryId": "cat-claro",
+        "host": "drupal.org",
+        "includeSubdomains": true,
+        "pathPrefix": "/project/claro/issues",
+        "priority": 0
+      },
+      {
+        "id": "rule-drupal-core-issues",
+        "categoryId": "cat-drupal-core",
+        "host": "drupal.org",
+        "includeSubdomains": true,
+        "pathPrefix": "/project/drupal/issues",
+        "priority": 0
+      },
+      { "id": "rule-drupal-org", "categoryId": "cat-drupal-general", "host": "drupal.org", "includeSubdomains": true, "priority": 0 },
+      { "id": "rule-claude", "categoryId": "cat-claude", "host": "claude.ai", "includeSubdomains": true, "priority": 0 },
+      {
+        "id": "rule-copilot",
+        "categoryId": "cat-copilot",
+        "host": "github.com",
+        "includeSubdomains": false,
+        "pathPrefix": "/copilot",
+        "priority": 0
+      }
+    ],
+    "fallbackDestinationId": "dest-misc"
+  }
+}
