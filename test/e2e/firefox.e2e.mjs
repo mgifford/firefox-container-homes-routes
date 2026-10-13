@@ -183,13 +183,30 @@ test("the console collector sees errors from extension pages", async () => {
   await newConsoleErrors();
   await inPage("win.console.error('e2e probe'); return null;");
   const errors = await newConsoleErrors();
-  assert.ok(errors.some((entry) => entry.includes("e2e probe")), `the probe was not collected; got ${JSON.stringify(errors)}`);
+  if (!errors.some((entry) => entry.includes("e2e probe"))) {
+    await driver.setContext(firefox.Context.CHROME);
+    const diag = await driver.executeScript(
+      `const storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
+       const messages = Services.console.getMessageArray() ?? [];
+       const events = storage.getEvents();
+       return {
+         remote: Services.prefs.getBoolPref("extensions.webextensions.remote", null),
+         messages: messages.length,
+         messagesMentioningProbe: messages.filter((m) => String(m.message ?? m.errorMessage).includes("e2e probe")).length,
+         events: events.length,
+         eventSample: events.slice(-5).map((e) => [e.level, e.filename, e.addonId, String(e.arguments?.[0])])
+       };`
+    );
+    await driver.setContext(firefox.Context.CONTENT);
+    assert.fail(`the probe was not collected; got ${JSON.stringify(errors)}; diagnostics ${JSON.stringify(diag)}`);
+  }
 });
 
 test("1. both pages load without console errors", async () => {
   await newConsoleErrors();
   await open(ROUTING_PAGE);
-  await waitForText("#check-results", /No routing is set up yet/);
+  // The add-on stores an empty routing setup on install.
+  await waitForText("#check-results", /No problems found|No routing is set up yet/);
   await open(OPTIONS_PAGE);
   await driver.wait(until.elementLocated(By.css('#config input[name="home:firefox-default"]')), WAIT);
   await driver.sleep(500);
@@ -205,7 +222,9 @@ test("2. routing page: adding a destination with a new container creates a real 
   await type("#destination-label", "E2E destination");
   // With one account, it is preselected; choose it explicitly anyway.
   await driver.wait(async () => (await driver.findElements(By.css("#destination-account option"))).length === 2, WAIT);
-  const accountId = await inPage("return (await api.storage.local.get('routing')).routing.accountContexts[0].id;");
+  const accountId = await inPage(
+    "return (await api.storage.local.get('routing')).routing.accountContexts.find((a) => a.label === 'E2E sign-ins').id;"
+  );
   await driver.findElement(By.css(`#destination-account option[value="${accountId}"]`)).click();
   await driver.findElement(By.css('#destination-container option[value="new"]')).click();
   await driver.findElement(By.css("#destination-submit")).click();
