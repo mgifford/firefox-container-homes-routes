@@ -43,6 +43,11 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   where any link would open and why, checks the configuration for
   problems, conflicting rules and containers shared between accounts,
   and shows the current setup. Editing comes next.
+- Edit accounts and destinations on the Routing settings page: add,
+  rename and remove them, and choose each destination's container or
+  create a new one. Removing is refused while something still uses the
+  item. Wide tables now scroll inside their own area instead of making
+  the page scroll sideways at narrow widths or high zoom.
 
 ### Refactoring
 

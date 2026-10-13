@@ -11,9 +11,9 @@
     <h1>Routing settings</h1>
     <p>
       Routing decides which container a link opens in when you choose
-      <strong>Open routed link</strong> from its context menu. Editing is
-      coming soon; for now this page shows your setup and explains where
-      any link would go.
+      <strong>Open routed link</strong> from its context menu. You can edit
+      accounts and destinations here. Editing categories and rules is
+      coming soon.
     </p>
 
     <section aria-labelledby="test-heading">
@@ -33,6 +33,63 @@
     <section aria-labelledby="check-heading">
       <h2 id="check-heading">Configuration check</h2>
       <ul id="check-results"></ul>
+    </section>
+
+    <section aria-labelledby="edit-heading">
+      <h2 id="edit-heading">Accounts and destinations</h2>
+      <p>
+        An <strong>account</strong> is one set of sign-ins, such as Personal
+        or Work. A <strong>destination</strong> is a place links open: one
+        container, used by one account.
+      </p>
+      <p id="edit-status" role="status"></p>
+
+      <h3 id="accounts-heading" tabindex="-1">Accounts</h3>
+      <ul id="account-list" aria-labelledby="accounts-heading"></ul>
+      <form id="account-form" class="editor" novalidate>
+        <fieldset>
+          <legend id="account-legend">Add an account</legend>
+          <div class="field">
+            <label for="account-label">Name</label>
+            <input id="account-label" name="label" type="text" autocomplete="off">
+          </div>
+          <p id="account-error" class="problem" hidden></p>
+          <div class="actions">
+            <button id="account-submit" type="submit">Add account</button>
+            <button id="account-cancel" type="button" hidden>Cancel</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <h3 id="destinations-heading" tabindex="-1">Destinations</h3>
+      <div id="destination-table"></div>
+      <form id="destination-form" class="editor" novalidate>
+        <fieldset>
+          <legend id="destination-legend">Add a destination</legend>
+          <div class="field">
+            <label for="destination-label">Name</label>
+            <input id="destination-label" name="label" type="text" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="destination-account">Account</label>
+            <select id="destination-account" name="accountContextId"></select>
+          </div>
+          <div class="field">
+            <label for="destination-container">Container</label>
+            <select id="destination-container" name="cookieStoreId" aria-describedby="container-hint"></select>
+            <p id="container-hint" class="hint">
+              "New container" creates a Firefox container with the
+              destination's name. You can change its colour and icon in
+              Firefox's container settings.
+            </p>
+          </div>
+          <p id="destination-error" class="problem" hidden></p>
+          <div class="actions">
+            <button id="destination-submit" type="submit">Add destination</button>
+            <button id="destination-cancel" type="button" hidden>Cancel</button>
+          </div>
+        </fieldset>
+      </form>
     </section>
 
     <section aria-labelledby="setup-heading">
