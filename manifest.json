@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Container Homes",
+  "name": "Container Homes Routes",
   "version": "0.5.0",
-  "description": "Set a home URL and up to 9 app slots per Firefox container, then jump to them with the toolbar button or Alt+Shift+Home/1-9.",
-  "homepage_url": "https://github.com/rolfkleef/firefox-container-homes#readme",
+  "description": "Development fork of Container Homes: set a home URL and up to 9 app slots per Firefox container. Project and account routing is in progress.",
+  "homepage_url": "https://github.com/mgifford/firefox-container-homes-routes#readme",
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "container-homes@drostan.org",
+      "id": "container-homes-routes@mgifford.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": ["none"]
@@ -40,7 +40,7 @@
   },
 
   "action": {
-    "default_title": "Open container home",
+    "default_title": "Open container home (Routes fork)",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

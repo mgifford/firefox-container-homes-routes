@@ -1,6 +1,19 @@
-# Container Homes
+# Container Homes Routes
 
-A Firefox extension to work with multi-account containers in a style insprired
+> **Development fork.** This is a fork of
+> [Container Homes](https://github.com/rolfkleef/firefox-container-homes)
+> by Rolf Kleef, used to develop project and account routing (organising
+> links by category, routing them to the right container and tab group,
+> and reusing tabs that are already open). Routing is not implemented yet;
+> today this fork behaves like upstream Container Homes. Changes that make
+> sense upstream are offered there as pull requests first.
+>
+> The fork installs as **Container Homes Routes** with its own extension ID
+> (`container-homes-routes@mgifford.github.io`), so it can sit alongside
+> upstream. If both are enabled, they register the same default shortcuts;
+> disable one, or reassign shortcuts (see Usage, step 7).
+
+Container Homes is a Firefox extension to work with multi-account containers in a style insprired
 by all-in-one apps like Franz, Rambox, and so on.
 
 For each multi account container, you can specify a home page, as well as
@@ -46,9 +59,10 @@ window per container, and sort them (app slots first).
 
 ### From a release
 
-Grab the signed `.xpi` from the
-[Releases page](https://github.com/rolfkleef/firefox-container-homes/releases)
-and open it in Firefox to install it.
+Upstream Container Homes publishes signed `.xpi` files on its
+[Releases page](https://github.com/rolfkleef/firefox-container-homes/releases).
+This fork does not publish releases yet; install it temporarily as
+described below.
 
 ### Temporarily, for development
 
@@ -120,6 +134,13 @@ npm run build   # produce an unsigned .zip in web-ext-artifacts/
 
 ## Releasing
 
+> **In this fork:** the release workflow below is inherited from upstream
+> and is unchanged. It signs with the `AMO_JWT_ISSUER` / `AMO_JWT_SECRET`
+> secrets of whichever repository runs it, so a pre-release tag pushed to
+> this fork fails at the signing step until the fork has its own AMO API
+> keys. GitHub also keeps Actions disabled on a new fork until they are
+> enabled in the repository settings. No fork release is planned yet.
+
 The add-on is submitted to AMO through two tracks, and they share one rule:
 **version numbers must be unique across both**, so each version belongs to
 exactly one of them.
@@ -162,4 +183,5 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Container Homes is copyright Rolf Kleef; this fork keeps
+the upstream licence and notice unchanged.
