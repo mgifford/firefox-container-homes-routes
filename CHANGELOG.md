@@ -29,6 +29,10 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
 - Never route known sign-in pages (Google, Microsoft, GitHub), so a
   sign-in stays in the container it started in. Coverage is listed in
   `docs/routing.md`.
+- Resolve routing destinations to Firefox containers by stored container
+  id, with recoverable errors (no container chosen, container removed,
+  private browsing, unsupported browser), and detect containers shared
+  between account contexts. Not yet used by any command.
 
 ### Refactoring
 
