@@ -1,11 +1,8 @@
 // In-memory stand-in for the parts of the WebExtension `browser` API that
-// the background script uses, plus a loader that runs the real, unmodified
-// background.js against it. This checks the extension's own logic only:
+// the background script uses, plus a loader that imports the real
+// background.js module against it. This checks the extension's own logic only:
 // Firefox's real tab, container and storage behaviour still needs manual
 // verification (see docs/manual-verification.md).
-
-import { readFileSync } from "node:fs";
-import vm from "node:vm";
 
 const BACKGROUND_PATH = new URL("../../src/background/background.js", import.meta.url);
 const NO_GROUP = -1;
@@ -208,11 +205,20 @@ export async function settle() {
   for (let i = 0; i < 20; i++) await new Promise((resolve) => setImmediate(resolve));
 }
 
-export function loadBackground(options) {
+let instance = 0;
+
+// The background script's diagnostic logging is noise in test output. The
+// test runner reports through its own stream, so failures still show.
+for (const level of ["log", "warn", "error"]) console[level] = () => {};
+
+// background.js reads the global `browser` when its listeners run, so each
+// call swaps in a fresh fake and imports a fresh copy of the module (the
+// query string defeats the module cache). Tests in a file run one at a
+// time, so the swap never overlaps a running test.
+export async function loadBackground(options) {
   const fake = createFakeBrowser(options);
-  const quiet = { log() {}, warn() {}, error() {} };
-  const context = vm.createContext({ browser: fake.browser, console: quiet, URL });
-  vm.runInContext(readFileSync(BACKGROUND_PATH, "utf8"), context, { filename: "background.js" });
+  globalThis.browser = fake.browser;
+  await import(`${BACKGROUND_PATH.href}?instance=${++instance}`);
 
   const command = (name) => fake.browser.commands.onCommand.fire(name);
   const clickToolbar = (tab) => fake.browser.action.onClicked.fire(tab);

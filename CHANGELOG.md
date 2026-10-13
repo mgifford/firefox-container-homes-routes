@@ -12,6 +12,12 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   (`container-homes-routes@mgifford.github.io`) and homepage, so a
   development install is distinguishable from upstream Container Homes.
   Behaviour is unchanged.
+- Add a behavioural test harness (`npm test`) and a CI workflow.
+
+### Refactoring
+
+- Load the background script as an ES module, so routing code can be
+  split into separately tested modules. Behaviour is unchanged.
 
 ## [0.5.0] - 2026-08-21
 
