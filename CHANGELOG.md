@@ -21,6 +21,11 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   local-only `containerBindings` map. Existing settings migrate on install
   or update without changes to home URLs, slots or preferences. Nothing
   uses the routing data yet.
+- Add the rule matcher (not yet wired to any command). Hosts match on
+  whole labels only, `www.` is treated as the same site, path prefixes
+  match whole segments, and precedence is one-time override, priority,
+  specificity, then fallback. Tied rules in different categories are
+  reported as ambiguous.
 
 ### Refactoring
 
