@@ -14,5 +14,6 @@ export const AUTH_ENDPOINTS = [
   { provider: "Microsoft", host: "login.microsoftonline.com" },
   { provider: "Microsoft", host: "login.live.com" },
   { provider: "GitHub", host: "github.com", pathPrefix: "/login" },
-  { provider: "GitHub", host: "github.com", pathPrefix: "/session" }
+  { provider: "GitHub", host: "github.com", pathPrefix: "/session" },
+  { provider: "GitHub", host: "github.com", pathPrefix: "/sessions" }
 ];
