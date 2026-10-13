@@ -88,11 +88,36 @@ export function createFakeBrowser({ tabs = [], containers = [], local = {}, focu
 
   const onCreated = event();
   const onRemoved = event();
+  state.menus = new Map();
+  state.menuRefreshes = 0;
 
   const browser = {
     runtime: { onInstalled: event() },
     storage: { local: storageArea(local), session: storageArea() },
     commands: { onCommand: event() },
+    menus: {
+      onShown: event(),
+      onHidden: event(),
+      onClicked: event(),
+      create(props) {
+        if (state.menus.has(props.id)) throw new Error(`Duplicate menu id: ${props.id}`);
+        if (props.parentId !== undefined && !state.menus.has(props.parentId)) {
+          throw new Error(`Unknown parent menu id: ${props.parentId}`);
+        }
+        state.menus.set(props.id, { visible: true, enabled: true, ...props });
+        return props.id;
+      },
+      async update(id, props) {
+        if (!state.menus.has(id)) throw new Error(`Unknown menu id: ${id}`);
+        Object.assign(state.menus.get(id), props);
+      },
+      async remove(id) {
+        if (!state.menus.delete(id)) throw new Error(`Unknown menu id: ${id}`);
+      },
+      refresh() {
+        state.menuRefreshes++;
+      }
+    },
     action: { onClicked: event() },
     contextualIdentities: {
       async query() {
@@ -152,8 +177,7 @@ export function createFakeBrowser({ tabs = [], containers = [], local = {}, focu
         }
         return structuredClone(tab);
       },
-      async create({ cookieStoreId = "firefox-default", url = "about:newtab", index } = {}) {
-        const windowId = state.focusedWindowId;
+      async create({ cookieStoreId = "firefox-default", url = "about:newtab", index, windowId = state.focusedWindowId } = {}) {
         const ordered = windowTabs(windowId);
         const tab = { id: nextTabId++, windowId, active: true, pinned: false, groupId: NO_GROUP, cookieStoreId, url };
         for (const t of ordered) t.active = false;

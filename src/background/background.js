@@ -1,4 +1,7 @@
 import { MIGRATION_KEYS, migrateConfig } from "../config/schema.js";
+import { registerRoutedLinkMenu } from "./routed-link-menu.js";
+
+registerRoutedLinkMenu();
 
 browser.runtime.onInstalled.addListener(async () => {
   const stored = await browser.storage.local.get(MIGRATION_KEYS);

@@ -112,6 +112,9 @@ removed when Firefox restarts.
 - `contextualIdentities` — list your Firefox containers on the options page.
 - `storage` — save your configured URLs locally, and remember which tab
   each slot last switched to for the current browser session.
+- `menus` — add "Open routed link" to the link context menu, and keep its
+  title and "Open routed link in" submenu up to date for the link you
+  right-clicked.
 - `tabGroups` — create, title, color, and reorder native tab groups for the
   group-and-sort command. Not available on Firefox for Android; the command
   no-ops there.

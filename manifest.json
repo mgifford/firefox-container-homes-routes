@@ -32,7 +32,8 @@
     "cookies",
     "storage",
     "contextualIdentities",
-    "tabGroups"
+    "tabGroups",
+    "menus"
   ],
 
   "background": {

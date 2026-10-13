@@ -1,9 +1,26 @@
 # Routing
 
-How Container Homes Routes decides where a link opens. This describes the
-rule matcher (`src/routing/match.js`). Nothing is routed automatically:
-routing will only be used when you ask for it, from an "Open routed link"
-command that is still being built.
+How Container Homes Routes decides where a link opens. Nothing is routed
+automatically: routing is only used when you ask for it.
+
+## Opening a routed link
+
+Right-click a web link:
+
+- **Open routed link** opens it in a new tab next to the current one, in
+  the container its rule chooses. The menu item says where, for example
+  "Open routed link in Drupal (Claro)".
+- **Open routed link in** lists the other destinations, with the matched
+  category's own destinations first, for example the Work development
+  container for a Claude link that normally opens in Personal AI. This
+  choice applies to that one link only; no rule is created or changed.
+
+If a link can't be routed, for example because its container was removed
+or no container has been chosen yet, the menu item is greyed out and says
+what to fix. Sign-in pages open in the current container and offer no
+alternatives. The menu is hidden in private windows, so private links are
+never moved into a normal container. Until routing has been set up (see
+[demo/README.md](demo/README.md)), the item is greyed out.
 
 ## Matching
 
