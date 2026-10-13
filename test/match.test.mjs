@@ -278,3 +278,43 @@ test("sign-in: look-alikes and ordinary pages on provider domains are routed nor
     assert.notEqual(matchUrl(url, everywhere).kind, "auth", url);
   }
 });
+
+// --- Rules that name a destination ------------------------------------------
+
+function withSiteRules(...rules) {
+  const config = routing({ rules: [rule("drupal", "drupal.org")] });
+  config.rules.push(...rules);
+  return config;
+}
+
+test("site rules: a rule naming a destination opens there, with no category", () => {
+  const siteRule = { id: "site-1", destinationId: "dest-other", host: "docs.google.com", includeSubdomains: true, priority: 0 };
+  const decision = matchUrl("https://docs.google.com/document/d/1", withSiteRules(siteRule));
+  assert.deepEqual(decision, { kind: "rule", destinationId: "dest-other", rule: siteRule, category: null, ambiguousWith: [] });
+});
+
+test("site rules: precedence is the same as for category rules", () => {
+  const deeper = { id: "site-api", destinationId: "dest-other", host: "api.drupal.org", includeSubdomains: false, priority: 0 };
+  const config = withSiteRules(deeper);
+  assert.equal(matchUrl("https://api.drupal.org/x", config).destinationId, "dest-other");
+  assert.equal(matchUrl("https://www.drupal.org/x", config).destinationId, "dest-drupal");
+});
+
+test("site rules: a rule whose destination is missing is skipped", () => {
+  const config = withSiteRules({ id: "site-gone", destinationId: "dest-gone", host: "drupal.org", includeSubdomains: true, priority: 9 });
+  assert.equal(matchUrl("https://drupal.org/", config).destinationId, "dest-drupal");
+});
+
+test("site rules: a tie with a category rule, or another destination, is ambiguous; the same destination is not", () => {
+  const sameSite = { id: "site-tie", destinationId: "dest-other", host: "drupal.org", includeSubdomains: true, priority: 0 };
+  const config = withSiteRules(sameSite);
+  assert.deepEqual(matchUrl("https://drupal.org/", config).ambiguousWith, [sameSite]);
+  assert.equal(findAmbiguousRules(config).length, 1);
+
+  const twice = withSiteRules();
+  twice.rules = [
+    { id: "s1", destinationId: "dest-other", host: "example.org", includeSubdomains: true, priority: 0 },
+    { id: "s2", destinationId: "dest-other", host: "www.example.org", includeSubdomains: true, priority: 0 }
+  ];
+  assert.deepEqual(findAmbiguousRules(twice), []);
+});

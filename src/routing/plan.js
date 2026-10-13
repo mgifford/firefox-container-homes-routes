@@ -40,12 +40,13 @@ function titleFor(decision, resolved) {
   if (decision.kind === "override") return where;
   if (decision.kind === "fallback") return `${where} (no rule matches)`;
   const conflict = decision.ambiguousWith.length > 0 ? ", rules conflict" : "";
-  return `${where} (${decision.category.label}${conflict})`;
+  const reason = decision.category ? decision.category.label : decision.rule.host;
+  return `${where} (${reason}${conflict})`;
 }
 
 // The destinations offered in the "Open routed link in" submenu, as
 // [{ destinationId, title, enabled }]. The matched category's destinations
-// come first, then the rest, leaving out the one the main item already
+// (if the rule names a category) come first, then the rest, leaving out the one the main item already
 // uses. Sign-in pages and non-web links offer no choices. A destination
 // that can't be opened right now is listed, disabled, with the reason.
 export function routingChoices(url, context) {
@@ -53,7 +54,7 @@ export function routingChoices(url, context) {
   const decision = matchUrl(url, routing);
   if (decision.kind === "unsupported" || decision.kind === "auth") return [];
 
-  const preferred = decision.kind === "rule" ? decision.category.destinationIds : [];
+  const preferred = decision.category?.destinationIds ?? [];
   const ordered = [
     ...preferred,
     ...routing.destinations.map((d) => d.id).filter((id) => !preferred.includes(id))

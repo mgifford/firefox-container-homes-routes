@@ -3,6 +3,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { CONFIG_VERSION } from "../src/config/schema.js";
 import { loadBackground, settle } from "./helpers/fake-browser.mjs";
 
 const WORK = "firefox-container-1";
@@ -15,13 +16,13 @@ const CONTAINERS = [
 test("install and update migrate stored settings to the current version", async () => {
   const fresh = await loadBackground();
   await fresh.browser.runtime.onInstalled.fire({});
-  assert.equal(fresh.browser.storage.local.data.configVersion, 2);
+  assert.equal(fresh.browser.storage.local.data.configVersion, CONFIG_VERSION);
   assert.deepEqual(fresh.browser.storage.local.data.containerBindings, {});
 
   const homes = { [WORK]: "https://work.example/" };
   const updated = await loadBackground({ local: { configVersion: 1, homes } });
   await updated.browser.runtime.onInstalled.fire({});
-  assert.equal(updated.browser.storage.local.data.configVersion, 2);
+  assert.equal(updated.browser.storage.local.data.configVersion, CONFIG_VERSION);
   assert.deepEqual(updated.browser.storage.local.data.homes, homes);
 
   const newer = await loadBackground({ local: { configVersion: 7 } });

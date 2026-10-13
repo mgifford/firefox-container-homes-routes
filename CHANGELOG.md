@@ -47,6 +47,10 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   where any link would open and why, checks the configuration for
   problems, conflicting rules and containers shared between accounts,
   and shows the current setup. Editing comes next.
+- Add configuration version 3: a rule can open a destination directly
+  (a site rule) instead of going through a category, and account
+  contexts can list their sign-ins (provider, such as Google, and an
+  optional account hint). A v2 config is upgraded without changes.
 - Edit accounts and destinations on the Routing settings page: add,
   rename and remove them, and choose each destination's container or
   create a new one. Removing is refused while something still uses the

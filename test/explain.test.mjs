@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { describeRule, explainUrl } from "../src/routing/explain.js";
+import { describeRule, explainUrl, ruleTargetLabel } from "../src/routing/explain.js";
 import { CLARO_ISSUE, containerBindings, containers, sampleRouting } from "./fixtures/routing.mjs";
 
 const context = (changes = {}) => ({ routing: sampleRouting(), containerBindings: { ...containerBindings }, containers, ...changes });
@@ -52,6 +52,19 @@ test("explain: conflicting rules are named, with how to resolve them", () => {
   const ctx = context();
   ctx.routing.rules.push({ id: "rule-dup", categoryId: "cat-claude", host: "drupal.org", includeSubdomains: true, priority: 0 });
   const result = explainUrl("https://www.drupal.org/about", ctx);
-  assert.match(result.problem, /drupal\.org and its subdomains \(Claude\)/);
+  assert.match(result.problem, /drupal\.org and its subdomains for Claude \(category\)/);
   assert.match(result.problem, /higher priority/);
+});
+
+test("explain: a site rule names its destination and has no category", () => {
+  const ctx = context();
+  ctx.routing.rules.push({ id: "site-docs", destinationId: "dest-work-dev", host: "docs.google.com", includeSubdomains: true, priority: 0 });
+  assert.deepEqual(explainUrl("https://docs.google.com/", ctx).details, [
+    ["Rule", "docs.google.com and its subdomains"],
+    ["Destination", "Work development"],
+    ["Account", "Work"],
+    ["Container", "Work development"]
+  ]);
+  assert.equal(ruleTargetLabel(ctx.routing, ctx.routing.rules.at(-1)), "Work development (destination)");
+  assert.equal(ruleTargetLabel(ctx.routing, ctx.routing.rules[0]), "Claro (category)");
 });

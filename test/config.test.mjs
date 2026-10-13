@@ -98,6 +98,13 @@ test("migration: a newer stored version is refused, not downgraded", () => {
   assert.match(result.error, /newer/);
 });
 
+test("migration: a v2 config moves to v3 without changing its data", () => {
+  const routing = validRouting();
+  const after = migrated({ configVersion: 2, routing, containerBindings: {} });
+  assert.equal(after.configVersion, 3);
+  assert.deepEqual(after.routing, routing);
+});
+
 // --- Routing validation --------------------------------------------------
 
 test("validation: an empty routing config is valid", () => {
@@ -225,4 +232,40 @@ test("container bindings: must name existing destinations and container ids", ()
     "containerBindings.dest-misc: must be a container id"
   ]);
   assert.deepEqual(validateContainerBindings(null, routing), ["containerBindings: must be an object"]);
+});
+
+test("validation: a rule may name a destination instead of a category, not both or neither", () => {
+  const routing = validRouting();
+  routing.rules.push({ id: "rule-docs", destinationId: "dest-ai-work", host: "docs.google.com", includeSubdomains: true, priority: 0 });
+  assert.deepEqual(validateRouting(routing), []);
+
+  routing.rules.push(
+    { id: "rule-both", categoryId: "cat-ai", destinationId: "dest-misc", host: "a.example", includeSubdomains: true, priority: 0 },
+    { id: "rule-neither", host: "b.example", includeSubdomains: true, priority: 0 },
+    { id: "rule-gone", destinationId: "dest-gone", host: "c.example", includeSubdomains: true, priority: 0 }
+  );
+  assert.deepEqual(validateRouting(routing), [
+    "rules[3]: must have either categoryId or destinationId, not both",
+    "rules[4]: must have either categoryId or destinationId, not neither",
+    'rules[5].destinationId: no destination "dest-gone"'
+  ]);
+});
+
+test("validation: sign-ins are optional; each needs an id and a provider", () => {
+  const routing = validRouting();
+  routing.accountContexts[1].signIns = [
+    { id: "si-google", provider: "Google", account: "me@work.example" },
+    { id: "si-github", provider: "GitHub" }
+  ];
+  assert.deepEqual(validateRouting(routing), []);
+
+  routing.accountContexts[1].signIns.push({ id: "si-google", provider: " " }, { id: "si-x", provider: "X", account: 3 });
+  assert.deepEqual(validateRouting(routing), [
+    'accountContexts[1].signIns[2].id: duplicate id "si-google"',
+    "accountContexts[1].signIns[2].provider: must be a non-empty string",
+    "accountContexts[1].signIns[3].account: must be text"
+  ]);
+
+  routing.accountContexts[0].signIns = "Google";
+  assert.ok(validateRouting(routing).includes("accountContexts[0].signIns: must be a list"));
 });

@@ -96,3 +96,16 @@ test("choices: sign-in pages and non-web links offer none", () => {
 test("menu text escapes & so Firefox doesn't treat it as an access key", () => {
   assert.equal(menuText("R&D (Work)"), "R&&D (Work)");
 });
+
+test("site rules: the title names the matched site; choices list every other destination", () => {
+  const ctx = context();
+  ctx.routing.rules.push({ id: "site-docs", destinationId: "dest-work-dev", host: "docs.google.com", includeSubdomains: true, priority: 0 });
+  const plan = planRoutedOpen("https://docs.google.com/document/d/1", ctx);
+  assert.deepEqual(plan, {
+    action: "open",
+    cookieStoreId: "firefox-container-3",
+    title: "Open routed link in Work development (docs.google.com)"
+  });
+  const titles = routingChoices("https://docs.google.com/document/d/1", ctx).map((c) => c.title);
+  assert.deepEqual(titles, ["Drupal (Personal)", "Personal AI (Personal)", "Misc (Personal)"]);
+});

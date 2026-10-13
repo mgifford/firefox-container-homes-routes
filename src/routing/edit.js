@@ -66,13 +66,15 @@ export function saveDestination(routing, containerBindings, { id, label, account
   return { routing: next, containerBindings: bindings, id };
 }
 
-// Refuses while a category or the fallback uses the destination. Its
+// Refuses while a category, a rule or the fallback uses the destination. Its
 // container choice is dropped; the container itself is left alone.
 export function removeDestination(routing, containerBindings, id) {
   const destination = routing.destinations.find((d) => d.id === id);
   const categories = routing.categories.filter((c) => c.destinationIds.includes(id)).map((c) => c.label);
   const uses = [];
   if (categories.length > 0) uses.push(`the categories ${categories.join(", ")}`);
+  const rules = routing.rules.filter((r) => r.destinationId === id).length;
+  if (rules > 0) uses.push(rules === 1 ? "1 site rule" : `${rules} site rules`);
   if (routing.fallbackDestinationId === id) uses.push("the fallback");
   if (uses.length > 0) {
     return { error: `"${destination.label}" is used by ${uses.join(" and ")}. Choose another destination there first.` };
