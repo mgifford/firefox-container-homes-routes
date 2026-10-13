@@ -249,7 +249,9 @@ test("sign-in: known provider sign-in pages are never routed", () => {
     ["https://github.com/login", "GitHub"],
     ["https://github.com/login/oauth/authorize?client_id=x", "GitHub"],
     ["https://www.github.com/login/device", "GitHub"],
-    ["https://github.com/session", "GitHub"]
+    ["https://github.com/session", "GitHub"],
+    ["https://github.com/sessions/two-factor", "GitHub"],
+    ["https://github.com/sessions/verified-device", "GitHub"]
   ]) {
     assert.deepEqual(matchUrl(url, everywhere), { kind: "auth", provider }, url);
   }
@@ -269,7 +271,7 @@ test("sign-in: look-alikes and ordinary pages on provider domains are routed nor
     "https://evil.example/oauth/authorize",
     "https://github.com/loginator",
     "https://github.com/someone/login",
-    "https://github.com/sessions/two-factor",
+    "https://github.com/sessionsx",
     "https://github.com/copilot",
     "https://graph.microsoft.com/login"
   ]) {

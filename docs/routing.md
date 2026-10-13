@@ -63,13 +63,12 @@ These pages are never routed, not even by a one-time override:
 |---|---|
 | Google | everything on `accounts.google.com` |
 | Microsoft | everything on `login.microsoftonline.com` and `login.live.com` |
-| GitHub | `github.com/login…` (including OAuth authorize and device login) and `github.com/session` |
+| GitHub | `github.com/login…` (including OAuth authorize and device login), `github.com/session` and `github.com/sessions…` (including two-factor and device verification) |
 
 Only these exact pages are recognised. Links are not treated as sign-in
 pages because they contain words like "login" or "oauth". Other sign-in
-pages (other providers, single sign-on for your organisation, GitHub's
-two-factor page at `/sessions/two-factor`) are not recognised yet; route
-links to them with care.
+pages (other providers, single sign-on for your organisation) are not
+recognised yet; route links to them with care.
 
 Separate containers always have separate sessions, even when you sign in
 with the same account in each. Choosing a container does not choose or
