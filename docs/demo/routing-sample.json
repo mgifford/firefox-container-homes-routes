@@ -12,7 +12,7 @@
       { "id": "ctx-work", "label": "Work" }
     ],
     "destinations": [
-      { "id": "dest-drupal", "label": "Drupal", "accountContextId": "ctx-personal", "browser": "firefox" },
+      { "id": "dest-drupal", "label": "Drupal", "accountContextId": "ctx-work", "browser": "firefox" },
       { "id": "dest-personal-ai", "label": "Personal AI", "accountContextId": "ctx-personal", "browser": "firefox" },
       { "id": "dest-work-dev", "label": "Work development", "accountContextId": "ctx-work", "browser": "firefox" },
       { "id": "dest-misc", "label": "Misc", "accountContextId": "ctx-personal", "browser": "firefox" }

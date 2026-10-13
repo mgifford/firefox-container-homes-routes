@@ -15,8 +15,8 @@ exists:
 
 Claude and GitHub Copilot each list both AI destinations, with a different
 default, to show choosing between personal and work. Drupal is under the
-Personal account context; change its `accountContextId` to `ctx-work` if
-Drupal is work for you.
+Work account context. All of this is sample data: your own config can
+assign any destination to any account context.
 
 Nothing uses this config yet. It is for demonstrating the routing steps
 as they land, and for checking what is stored.

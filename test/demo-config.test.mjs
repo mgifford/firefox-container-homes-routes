@@ -34,7 +34,9 @@ test("demo config: the examples in docs/demo/README.md route as documented", () 
   assert.deepEqual(where("https://blog.example/post"), ["fallback", "dest-misc"]);
 });
 
-test("demo config: personal and work AI destinations use different account contexts", () => {
+test("demo config: account contexts are as documented", () => {
   const contextOf = (id) => demo.routing.destinations.find((d) => d.id === id).accountContextId;
-  assert.notEqual(contextOf("dest-personal-ai"), contextOf("dest-work-dev"));
+  assert.equal(contextOf("dest-personal-ai"), "ctx-personal");
+  assert.equal(contextOf("dest-work-dev"), "ctx-work");
+  assert.equal(contextOf("dest-drupal"), "ctx-work");
 });
