@@ -83,6 +83,24 @@ export function validateRouting(routing) {
     });
   };
 
+  // Sign-ins are optional: [{ id, provider, account }], where provider is
+  // a name such as "Google" and account is an optional hint such as an
+  // email address.
+  each("accountContexts", (context, where) => {
+    if (context.signIns === undefined) return;
+    checkCollection(problems, `${where}.signIns`, context.signIns, { needsLabel: false });
+    if (!Array.isArray(context.signIns)) return;
+    context.signIns.forEach((signIn, index) => {
+      if (!isObject(signIn)) return;
+      if (!isNonEmptyString(signIn.provider)) {
+        problems.push(`${where}.signIns[${index}].provider: must be a non-empty string`);
+      }
+      if (signIn.account !== undefined && typeof signIn.account !== "string") {
+        problems.push(`${where}.signIns[${index}].account: must be text`);
+      }
+    });
+  });
+
   each("destinations", (destination, where) => {
     if (!contextIds.has(destination.accountContextId)) {
       problems.push(`${where}.accountContextId: no account context "${destination.accountContextId}"`);
@@ -110,8 +128,16 @@ export function validateRouting(routing) {
   });
 
   each("rules", (rule, where) => {
-    if (!categoryIds.has(rule.categoryId)) {
+    // A rule leads either to a category (which picks a destination) or
+    // straight to one destination.
+    const hasCategory = rule.categoryId !== undefined;
+    const hasDestination = rule.destinationId !== undefined;
+    if (hasCategory === hasDestination) {
+      problems.push(`${where}: must have either categoryId or destinationId, not ${hasCategory ? "both" : "neither"}`);
+    } else if (hasCategory && !categoryIds.has(rule.categoryId)) {
       problems.push(`${where}.categoryId: no category "${rule.categoryId}"`);
+    } else if (hasDestination && !destinationIds.has(rule.destinationId)) {
+      problems.push(`${where}.destinationId: no destination "${rule.destinationId}"`);
     }
     const host = hostProblem(rule.host);
     if (host) problems.push(`${where}.host: ${host}`);

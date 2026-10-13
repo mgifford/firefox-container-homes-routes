@@ -1,7 +1,7 @@
 import { emptyRouting } from "../config/schema.js";
 import { validateContainerBindings, validateRouting } from "../config/validate.js";
 import { removeAccountContext, removeDestination, saveAccountContext, saveDestination } from "../routing/edit.js";
-import { describeRule, explainUrl } from "../routing/explain.js";
+import { describeRule, explainUrl, ruleTargetLabel } from "../routing/explain.js";
 import { findAmbiguousRules } from "../routing/match.js";
 import { DEFAULT_COOKIE_STORE_ID, findSharedContainers, resolveDestination } from "../routing/resolve.js";
 
@@ -70,7 +70,7 @@ function renderCheck() {
       items.push(`Problem: ${problem}`);
     }
     for (const group of findAmbiguousRules(routing)) {
-      const rules = group.map((rule) => `${describeRule(rule)} (${labelOf(routing.categories, rule.categoryId)})`);
+      const rules = group.map((rule) => `${describeRule(rule)} for ${ruleTargetLabel(routing, rule)}`);
       items.push(`Conflict: these rules match the same links equally: ${rules.join("; ")}. Give one a higher priority.`);
     }
     for (const shared of findSharedContainers(routing, containerBindings)) {
@@ -133,7 +133,7 @@ function renderSetup() {
     category.destinationIds.map((id) => labelOf(routing.destinations, id)).join(", ")
   ]);
 
-  const ruleRows = routing.rules.map((rule) => [describeRule(rule), labelOf(routing.categories, rule.categoryId)]);
+  const ruleRows = routing.rules.map((rule) => [describeRule(rule), ruleTargetLabel(routing, rule)]);
 
   const fallback =
     routing.fallbackDestinationId === null
@@ -142,7 +142,7 @@ function renderSetup() {
 
   setup.replaceChildren(
     scrollable(table("Categories", ["Category", "Default destination", "All destinations"], categoryRows)),
-    scrollable(table("Rules", ["Matches", "Category"], ruleRows)),
+    scrollable(table("Rules", ["Matches", "Opens in"], ruleRows)),
     element("p", `Fallback for links no rule matches: ${fallback}`)
   );
 }

@@ -1,6 +1,9 @@
 // Pure rule matching: given a URL and the routing config, decide which
 // destination a link should open in, and explain why.
 //
+// A rule leads to a category (whose default destination is used, with its
+// other destinations offered as choices) or straight to one destination.
+//
 // Precedence, highest first:
 //   0. Known sign-in pages (auth-endpoints.js) are never routed.
 //   1. One-time override chosen by the user for this link.
@@ -9,8 +12,9 @@
 //        a. more host labels    (team.slack.com beats slack.com)
 //        b. exact host          (beats a rule that includes subdomains)
 //        c. more path segments  (/project/claro beats /project)
-//      Rules still tied after this, in different categories, are reported
-//      as ambiguous; the one listed first in the config is used.
+//      Rules still tied after this that lead to different places (another
+//      category or destination) are reported as ambiguous; the one listed
+//      first in the config is used.
 //   4. The fallback destination (Misc), if one is configured.
 //   5. Otherwise nothing: the link stays where it is.
 //
@@ -71,6 +75,11 @@ function compareRules(a, b) {
   return 0;
 }
 
+// Where a rule leads, as a key: rules with the same key never conflict.
+function ruleTarget(rule) {
+  return rule.destinationId !== undefined ? `destination:${rule.destinationId}` : `category:${rule.categoryId}`;
+}
+
 function parseRoutable(url) {
   let parsed;
   try {
@@ -92,10 +101,12 @@ function authEndpointFor(urlHost, pathname) {
 //   { kind: "auth", provider }                  a sign-in page: stays put
 //   { kind: "override", destinationId }
 //   { kind: "rule", destinationId, rule, category, ambiguousWith }
+//                                               category is null for a rule
+//                                               naming a destination
 //   { kind: "fallback", destinationId }
 //   { kind: "none" }                            no rule and no fallback
-// `ambiguousWith` lists other rules tied with the chosen one that belong to
-// different categories (empty when the choice is clear).
+// `ambiguousWith` lists other rules tied with the chosen one that lead
+// somewhere else (empty when the choice is clear).
 export function matchUrl(url, routing, { overrideDestinationId } = {}) {
   const parsed = parseRoutable(url);
   if (!parsed) return { kind: "unsupported" };
@@ -114,17 +125,18 @@ export function matchUrl(url, routing, { overrideDestinationId } = {}) {
 
   // Array.prototype.sort is stable, so ties keep their config order.
   const candidates = routing.rules
-    .filter((rule) => categories.has(rule.categoryId))
+    .filter((rule) => categories.has(rule.categoryId) || destinationIds.has(rule.destinationId))
     .filter((rule) => hostMatches(rule, urlHost) && pathMatches(rule, parsed.pathname))
     .sort(compareRules);
 
   if (candidates.length > 0) {
     const [rule] = candidates;
-    const category = categories.get(rule.categoryId);
+    const category = categories.get(rule.categoryId) ?? null;
     const ambiguousWith = candidates.filter(
-      (other) => other !== rule && compareRules(rule, other) === 0 && other.categoryId !== rule.categoryId
+      (other) => other !== rule && compareRules(rule, other) === 0 && ruleTarget(other) !== ruleTarget(rule)
     );
-    return { kind: "rule", destinationId: category.defaultDestinationId, rule, category, ambiguousWith };
+    const destinationId = category ? category.defaultDestinationId : rule.destinationId;
+    return { kind: "rule", destinationId, rule, category, ambiguousWith };
   }
 
   if (routing.fallbackDestinationId !== null && destinationIds.has(routing.fallbackDestinationId)) {
@@ -135,7 +147,7 @@ export function matchUrl(url, routing, { overrideDestinationId } = {}) {
 }
 
 // Groups of rules that would tie for some URL and send it to different
-// categories. Two rules can only tie when they have the same priority, the
+// places (categories or destinations). Two rules can only tie when they have the same priority, the
 // same site host, the same subdomain setting and the same path prefix, so
 // grouping on that key finds every ambiguity without enumerating URLs.
 export function findAmbiguousRules(routing) {
@@ -151,6 +163,6 @@ export function findAmbiguousRules(routing) {
     groups.get(key).push(rule);
   }
   return [...groups.values()].filter(
-    (rules) => new Set(rules.map((r) => r.categoryId)).size > 1
+    (rules) => new Set(rules.map(ruleTarget)).size > 1
   );
 }

@@ -24,6 +24,12 @@ never moved into a normal container. Until routing has been set up (see
 
 ## Matching
 
+- A rule leads either straight to one **destination** (a site rule, such
+  as `docs.google.com` opening in your work container) or to a
+  **category**, which opens its default destination and offers its other
+  destinations first in **Open routed link in** (such as Claude, personal
+  or work).
+
 - Only `http` and `https` links are routed.
 - A rule names a host. Hosts are compared using the address Firefox
   parses, never by searching the link text, so a rule for `drupal.org`
@@ -48,8 +54,9 @@ never moved into a normal container. Until routing has been set up (see
 5. The **fallback** destination (usually Misc).
 6. Otherwise the link stays where it is.
 
-Two rules that tie at step 4 and lead to different categories are
-reported as ambiguous. The one listed first is used until you resolve it.
+Two rules that tie at step 4 and lead to different places (another
+category or destination) are reported as ambiguous. The one listed first
+is used until you resolve it.
 
 ## Sign-in pages
 

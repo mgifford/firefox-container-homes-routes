@@ -111,3 +111,15 @@ test("destinations: removal drops the destination and its container choice", () 
   assert.equal("dest-work-dev" in result.containerBindings, false);
   assertValid(result);
 });
+
+test("destinations: removal is refused while site rules open in it", () => {
+  const routing = sampleRouting();
+  routing.categories[2].destinationIds = ["dest-personal-ai"];
+  routing.rules.push(
+    { id: "s1", destinationId: "dest-work-dev", host: "docs.google.com", includeSubdomains: true, priority: 0 },
+    { id: "s2", destinationId: "dest-work-dev", host: "github.com", includeSubdomains: true, priority: 0 }
+  );
+  assert.deepEqual(removeDestination(routing, containerBindings, "dest-work-dev"), {
+    error: '"Work development" is used by 2 site rules. Choose another destination there first.'
+  });
+});

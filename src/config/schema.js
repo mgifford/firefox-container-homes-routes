@@ -6,12 +6,16 @@
 //   2      Routing fork: adds `routing` (portable: account contexts,
 //          destinations, categories, rules) and `containerBindings`
 //          (local only: destination id -> cookieStoreId).
+//   3      A rule can name a destination directly (`destinationId`)
+//          instead of a category, and account contexts can list their
+//          `signIns`. Nothing is rewritten; the version marks configs
+//          that older builds would misread.
 //
 // `homes`, `slots` and `autoGroupNewTabs` keep their v1 shape in every
 // version. Migrations only add keys, so existing settings are never
 // rewritten.
 
-export const CONFIG_VERSION = 2;
+export const CONFIG_VERSION = 3;
 
 // Storage keys a migration needs to read.
 export const MIGRATION_KEYS = ["configVersion", "routing", "containerBindings"];

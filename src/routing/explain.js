@@ -42,11 +42,10 @@ export function explainUrl(url, context) {
   let problem = null;
 
   if (decision.kind === "rule") {
-    details.push(["Rule", describeRule(decision.rule)], ["Category", decision.category.label]);
+    details.push(["Rule", describeRule(decision.rule)]);
+    if (decision.category) details.push(["Category", decision.category.label]);
     if (decision.ambiguousWith.length > 0) {
-      const others = decision.ambiguousWith
-        .map((rule) => `${describeRule(rule)} (${categoryLabel(routing, rule.categoryId)})`)
-        .join("; ");
+      const others = decision.ambiguousWith.map((rule) => `${describeRule(rule)} for ${ruleTargetLabel(routing, rule)}`).join("; ");
       problem = `Other rules match equally: ${others}. The rule listed first is used; give one a higher priority to decide.`;
     }
   } else {
@@ -65,6 +64,12 @@ export function explainUrl(url, context) {
   return { summary: `Opens in the ${resolved.containerName} container.`, details, problem };
 }
 
-function categoryLabel(routing, categoryId) {
-  return routing.categories.find((c) => c.id === categoryId)?.label ?? categoryId;
+// Where a rule leads, for people: "Claro (category)" or "Work (destination)".
+export function ruleTargetLabel(routing, rule) {
+  if (rule.destinationId !== undefined) {
+    const label = routing.destinations.find((d) => d.id === rule.destinationId)?.label ?? `(missing: ${rule.destinationId})`;
+    return `${label} (destination)`;
+  }
+  const label = routing.categories.find((c) => c.id === rule.categoryId)?.label ?? `(missing: ${rule.categoryId})`;
+  return `${label} (category)`;
 }
