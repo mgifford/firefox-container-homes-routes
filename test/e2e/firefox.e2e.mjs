@@ -16,7 +16,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Builder, By, until } from "selenium-webdriver";
 import firefox from "selenium-webdriver/firefox.js";
-import LogInspector from "selenium-webdriver/bidi/logInspector.js";
 import { validateRouting } from "../../src/config/validate.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
@@ -31,8 +30,8 @@ const WAIT = 10_000;
 
 let driver;
 let buildDir;
-// Error-level console messages and uncaught exceptions, from WebDriver BiDi.
-const logErrors = [];
+// Console errors already reported, so each check sees only new ones.
+const seenErrors = new Set();
 
 before(async () => {
   // Install the packaged add-on, the same files `npm run build` ships.
@@ -46,18 +45,13 @@ before(async () => {
     .addArguments("-headless")
     .windowSize({ width: 1280, height: 1024 })
     .setPreference("extensions.webextensions.uuids", JSON.stringify({ [ADDON_ID]: UUID }))
-    .setPreference("privacy.userContext.enabled", true)
-    .enableBidi();
+    .setPreference("privacy.userContext.enabled", true);
   if (process.env.FIREFOX_BIN) options.setBinary(process.env.FIREFOX_BIN);
 
   // System access lets the tests open moz-extension:// pages, which
-  // Marionette refuses to navigate to otherwise.
+  // Marionette refuses to navigate to otherwise, and read Firefox's console.
   const service = new firefox.ServiceBuilder().addArguments("--allow-system-access");
   driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).setFirefoxService(service).build();
-  const inspector = await LogInspector(driver);
-  await inspector.onLog((entry) => {
-    if (entry.level === "error") logErrors.push(`${entry.type}: ${entry.text}`);
-  });
   await driver.installAddon(zip, true);
 });
 
@@ -110,13 +104,53 @@ async function open(url) {
   await driver.wait(async () => (await driver.executeScript("return document.readyState")) === "complete", WAIT);
 }
 
+// Errors from the add-on's pages that Firefox's console has recorded since
+// the last call: uncaught exceptions and console.error() calls. WebDriver
+// BiDi does not report messages from extension pages, so this reads the
+// console from the browser chrome.
+async function newConsoleErrors() {
+  await driver.setContext(firefox.Context.CHROME);
+  let entries;
+  try {
+    entries = await driver.executeScript(
+      `const base = arguments[0];
+       const fromAddon = (source) => String(source ?? "").startsWith(base);
+       const errors = [];
+       for (const message of Services.console.getMessageArray() ?? []) {
+         if (!(message instanceof Ci.nsIScriptError) || message.flags & Ci.nsIScriptError.warningFlag) continue;
+         if (fromAddon(message.sourceName)) errors.push(\`\${message.timeStamp} \${message.sourceName}: \${message.errorMessage}\`);
+       }
+       const storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
+       for (const event of storage.getEvents()) {
+         if (event.level !== "error") continue;
+         if (fromAddon(event.filename) || event.addonId === arguments[1]) {
+           const text = Array.from(event.arguments ?? [], (arg) => { try { return String(arg); } catch { return "?"; } }).join(" ");
+           errors.push(\`\${event.timeStamp} console.error \${event.filename}: \${text}\`);
+         }
+       }
+       return errors;`,
+      BASE,
+      ADDON_ID
+    );
+  } finally {
+    await driver.setContext(firefox.Context.CONTENT);
+  }
+  const fresh = entries.filter((entry) => !seenErrors.has(entry));
+  for (const entry of fresh) seenErrors.add(entry);
+  return fresh;
+}
+
 async function textOf(selector) {
   return driver.findElement(By.css(selector)).getText();
 }
 
 async function waitForText(selector, pattern) {
   const node = await driver.wait(until.elementLocated(By.css(selector)), WAIT);
-  await driver.wait(async () => pattern.test(await node.getText()), WAIT, `${selector} never matched ${pattern}`);
+  try {
+    await driver.wait(async () => pattern.test(await node.getText()), WAIT);
+  } catch {
+    assert.fail(`${selector} never matched ${pattern}; its text is ${JSON.stringify(await node.getText())}`);
+  }
 }
 
 async function type(selector, text) {
@@ -146,20 +180,20 @@ function describeViolations(violations) {
 test("the console collector sees errors from extension pages", async () => {
   // Without this, "no console errors" below could pass by seeing nothing.
   await open(ROUTING_PAGE);
-  const before = logErrors.length;
+  await newConsoleErrors();
   await inPage("win.console.error('e2e probe'); return null;");
-  await driver.wait(async () => logErrors.length > before, WAIT, "BiDi did not report a console.error from the extension page");
-  logErrors.splice(before);
+  const errors = await newConsoleErrors();
+  assert.ok(errors.some((entry) => entry.includes("e2e probe")), `the probe was not collected; got ${JSON.stringify(errors)}`);
 });
 
 test("1. both pages load without console errors", async () => {
-  const before = logErrors.length;
+  await newConsoleErrors();
   await open(ROUTING_PAGE);
   await waitForText("#check-results", /No routing is set up yet/);
   await open(OPTIONS_PAGE);
   await driver.wait(until.elementLocated(By.css('#config input[name="home:firefox-default"]')), WAIT);
   await driver.sleep(500);
-  assert.deepEqual(logErrors.slice(before), []);
+  assert.deepEqual(await newConsoleErrors(), []);
 });
 
 test("2. routing page: adding a destination with a new container creates a real container", async () => {
@@ -266,6 +300,6 @@ test("5. options page: a bare domain in a home field is saved as https://", asyn
   assert.equal(await home.getAttribute("value"), "https://drupal.org/");
 });
 
-test("no console errors during the whole run", () => {
-  assert.deepEqual(logErrors, []);
+test("no console errors during the rest of the run", async () => {
+  assert.deepEqual(await newConsoleErrors(), []);
 });
