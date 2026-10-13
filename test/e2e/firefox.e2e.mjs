@@ -43,16 +43,17 @@ before(async () => {
   const zip = join(buildDir, readdirSync(buildDir).find((name) => name.endsWith(".zip")));
 
   const options = new firefox.Options()
-    // System access lets the tests open moz-extension:// pages; Marionette
-    // refuses that navigation otherwise.
-    .addArguments("-headless", "-remote-allow-system-access")
+    .addArguments("-headless")
     .windowSize({ width: 1280, height: 1024 })
     .setPreference("extensions.webextensions.uuids", JSON.stringify({ [ADDON_ID]: UUID }))
     .setPreference("privacy.userContext.enabled", true)
     .enableBidi();
   if (process.env.FIREFOX_BIN) options.setBinary(process.env.FIREFOX_BIN);
 
-  driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).build();
+  // System access lets the tests open moz-extension:// pages, which
+  // Marionette refuses to navigate to otherwise.
+  const service = new firefox.ServiceBuilder().addArguments("--allow-system-access");
+  driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).setFirefoxService(service).build();
   const inspector = await LogInspector(driver);
   await inspector.onLog((entry) => {
     if (entry.level === "error") logErrors.push(`${entry.type}: ${entry.text}`);
