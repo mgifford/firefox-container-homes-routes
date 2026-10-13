@@ -57,6 +57,15 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   item. Wide tables now scroll inside their own area instead of making
   the page scroll sideways at narrow widths or high zoom.
 
+### Fixes
+
+- **Import config…** now works across Firefox installs. Container ids
+  differ between installs, so each entry is matched by its container name
+  when its id is missing here or belongs to a differently named container.
+  Entries whose name matches no container, or more than one, are listed in
+  the confirmation and skipped. The export format is unchanged, so older
+  files still import.
+
 ### Refactoring
 
 - Load the background script as an ES module, so routing code can be
