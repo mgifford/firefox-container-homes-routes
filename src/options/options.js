@@ -203,6 +203,58 @@ exportButton.addEventListener("click", async () => {
   URL.revokeObjectURL(url);
 });
 
+// Turns a parsed export file into { homes, slots }, or throws an Error
+// describing the first problem found. Nothing is stored unless the whole
+// file validates, so a bad file can't leave a half-imported config.
+function parseImport(data) {
+  if (
+    !data ||
+    data.schemaVersion !== SCHEMA_VERSION ||
+    !Array.isArray(data.containers)
+  ) {
+    throw new Error("unrecognized file format.");
+  }
+
+  const homes = {};
+  const slots = {};
+
+  for (const container of data.containers) {
+    const cookieStoreId = container?.cookieStoreId;
+    if (typeof cookieStoreId !== "string" || !cookieStoreId) {
+      throw new Error("a container entry has no cookieStoreId.");
+    }
+
+    if (container.homeUrl) {
+      homes[cookieStoreId] = parseImportedUrl(container.homeUrl, cookieStoreId);
+    }
+
+    if (container.slots !== undefined) {
+      if (typeof container.slots !== "object" || container.slots === null) {
+        throw new Error(`slots for ${cookieStoreId} are not an object.`);
+      }
+
+      for (const [slotNumber, url] of Object.entries(container.slots)) {
+        if (!SLOT_NUMBERS.includes(Number(slotNumber))) {
+          throw new Error(`${cookieStoreId} has an unknown slot "${slotNumber}".`);
+        }
+        slots[cookieStoreId] ??= {};
+        slots[cookieStoreId][slotNumber] = parseImportedUrl(url, cookieStoreId);
+      }
+    }
+  }
+
+  return { homes, slots };
+}
+
+function parseImportedUrl(url, cookieStoreId) {
+  try {
+    if (typeof url !== "string") throw new TypeError();
+    return new URL(url).href;
+  } catch {
+    throw new Error(`${cookieStoreId} has an invalid URL.`);
+  }
+}
+
 importInput.addEventListener("change", async () => {
   const [file] = importInput.files;
   importInput.value = "";
@@ -216,8 +268,12 @@ importInput.addEventListener("change", async () => {
     return;
   }
 
-  if (data.schemaVersion !== SCHEMA_VERSION || !Array.isArray(data.containers)) {
-    status.textContent = "Could not import: unrecognized file format.";
+  let homes;
+  let slots;
+  try {
+    ({ homes, slots } = parseImport(data));
+  } catch (error) {
+    status.textContent = `Could not import: ${error.message}`;
     return;
   }
 
@@ -225,15 +281,6 @@ importInput.addEventListener("change", async () => {
     `Replace all current settings with the ${data.containers.length} container(s) in this file?`
   );
   if (!confirmed) return;
-
-  const homes = {};
-  const slots = {};
-
-  for (const container of data.containers) {
-    if (!container || typeof container.cookieStoreId !== "string") continue;
-    if (container.homeUrl) homes[container.cookieStoreId] = container.homeUrl;
-    if (container.slots) slots[container.cookieStoreId] = container.slots;
-  }
 
   await browser.storage.local.set({ homes, slots });
   status.textContent = "Imported.";
