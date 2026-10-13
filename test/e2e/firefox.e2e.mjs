@@ -53,11 +53,9 @@ before(async () => {
     .setPreference("devtools.console.stdout.chrome", false);
   if (process.env.FIREFOX_BIN) options.setBinary(process.env.FIREFOX_BIN);
 
-  // System access lets the tests open moz-extension:// pages, which
-  // Marionette refuses to navigate to otherwise.
   firefoxLog = join(buildDir, "firefox.log");
   const logFd = openSync(firefoxLog, "a");
-  const service = new firefox.ServiceBuilder().addArguments("--allow-system-access").setStdio(["ignore", logFd, logFd]);
+  const service = new firefox.ServiceBuilder().setStdio(["ignore", logFd, logFd]);
   driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).setFirefoxService(service).build();
   await driver.manage().window().setRect({ width: 1280, height: 1024 });
   await driver.installAddon(zip, true);
