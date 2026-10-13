@@ -41,6 +41,13 @@ a temporary add-on. The add-on's internal UUID is fixed with the
 `moz-extension://…/src/settings/routing.html` directly.
 `privacy.userContext.enabled` turns on container tabs.
 
+Console errors are read from Firefox's own output:
+`devtools.console.stdout.content` prints page console messages, including
+those from extension pages, which WebDriver BiDi does not report. A first
+test sends a `console.error` and an uncaught exception from an extension
+page and fails if either is missed, so "no console errors" can't pass by
+seeing nothing.
+
 ## What these tests do not cover
 
 - **The right-click menu.** WebDriver cannot open or click Firefox's

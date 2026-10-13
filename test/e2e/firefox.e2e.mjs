@@ -32,8 +32,8 @@ let driver;
 let buildDir;
 // geckodriver's and Firefox's stdout and stderr.
 let firefoxLog;
-// Console errors already reported, so each check sees only new ones.
-const seenErrors = new Set();
+// How much of firefoxLog has been checked for console errors.
+let logOffset = 0;
 
 before(async () => {
   // Install the packaged add-on, the same files `npm run build` ships.
@@ -45,19 +45,21 @@ before(async () => {
 
   const options = new firefox.Options()
     .addArguments("-headless")
-    .windowSize({ width: 1280, height: 1024 })
     .setPreference("extensions.webextensions.uuids", JSON.stringify({ [ADDON_ID]: UUID }))
     .setPreference("privacy.userContext.enabled", true)
-    // Prints page console messages, including extension pages', to stdout.
-    .setPreference("devtools.console.stdout.content", true);
+    // Prints page console messages, including extension pages', to stdout,
+    // and leaves out Firefox's own, so only pages' messages are printed.
+    .setPreference("devtools.console.stdout.content", true)
+    .setPreference("devtools.console.stdout.chrome", false);
   if (process.env.FIREFOX_BIN) options.setBinary(process.env.FIREFOX_BIN);
 
   // System access lets the tests open moz-extension:// pages, which
-  // Marionette refuses to navigate to otherwise, and read Firefox's console.
+  // Marionette refuses to navigate to otherwise.
   firefoxLog = join(buildDir, "firefox.log");
   const logFd = openSync(firefoxLog, "a");
   const service = new firefox.ServiceBuilder().addArguments("--allow-system-access").setStdio(["ignore", logFd, logFd]);
   driver = await new Builder().forBrowser("firefox").setFirefoxOptions(options).setFirefoxService(service).build();
+  await driver.manage().window().setRect({ width: 1280, height: 1024 });
   await driver.installAddon(zip, true);
 });
 
@@ -110,40 +112,18 @@ async function open(url) {
   await driver.wait(async () => (await driver.executeScript("return document.readyState")) === "complete", WAIT);
 }
 
-// Errors from the add-on's pages that Firefox's console has recorded since
-// the last call: uncaught exceptions and console.error() calls. WebDriver
-// BiDi does not report messages from extension pages, so this reads the
-// console from the browser chrome.
+// Errors printed by Firefox since the last call: console.error() calls in
+// pages and uncaught exceptions in the add-on's pages. WebDriver BiDi and the
+// browser console in the main process don't see extension pages, which run
+// in their own process, but devtools.console.stdout.content prints them.
 async function newConsoleErrors() {
-  await driver.setContext(firefox.Context.CHROME);
-  let entries;
-  try {
-    entries = await driver.executeScript(
-      `const base = arguments[0];
-       const fromAddon = (source) => String(source ?? "").startsWith(base);
-       const errors = [];
-       for (const message of Services.console.getMessageArray() ?? []) {
-         if (!(message instanceof Ci.nsIScriptError) || message.flags & Ci.nsIScriptError.warningFlag) continue;
-         if (fromAddon(message.sourceName)) errors.push(\`\${message.timeStamp} \${message.sourceName}: \${message.errorMessage}\`);
-       }
-       const storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
-       for (const event of storage.getEvents()) {
-         if (event.level !== "error") continue;
-         if (fromAddon(event.filename) || event.addonId === arguments[1]) {
-           const text = Array.from(event.arguments ?? [], (arg) => { try { return String(arg); } catch { return "?"; } }).join(" ");
-           errors.push(\`\${event.timeStamp} console.error \${event.filename}: \${text}\`);
-         }
-       }
-       return errors;`,
-      BASE,
-      ADDON_ID
-    );
-  } finally {
-    await driver.setContext(firefox.Context.CONTENT);
-  }
-  const fresh = entries.filter((entry) => !seenErrors.has(entry));
-  for (const entry of fresh) seenErrors.add(entry);
-  return fresh;
+  await driver.sleep(250);
+  const text = readFileSync(firefoxLog, "utf8");
+  const fresh = text.slice(logOffset);
+  logOffset = text.length;
+  return fresh
+    .split("\n")
+    .filter((line) => line.startsWith("console.error:") || line.startsWith(`JavaScript error: ${BASE}/`));
 }
 
 async function textOf(selector) {
@@ -187,34 +167,11 @@ test("the console collector sees errors from extension pages", async () => {
   // Without this, "no console errors" below could pass by seeing nothing.
   await open(ROUTING_PAGE);
   await newConsoleErrors();
-  await inPage("win.console.error('e2e probe'); return null;");
+  await inPage("win.console.error('e2e probe'); win.setTimeout(() => { throw new Error('e2e uncaught probe'); }, 0); return null;");
+  await driver.sleep(500);
   const errors = await newConsoleErrors();
-  // Experiment: show what Firefox printed, to see whether page console
-  // output from extension pages reaches stdout.
-  await inPage("win.setTimeout(() => { throw new Error('e2e uncaught probe'); }, 0); return null;");
-  await driver.sleep(1000);
-  const lines = readFileSync(firefoxLog, "utf8").split("\n");
-  console.log("--- Firefox output: lines mentioning the probe or moz-extension ---");
-  for (const line of lines) if (/e2e|moz-extension|console\.|JavaScript error/i.test(line)) console.log(line);
-  console.log(`--- Firefox output: last 40 of ${lines.length} lines ---`);
-  console.log(lines.slice(-40).join("\n"));
-  if (!errors.some((entry) => entry.includes("e2e probe"))) {
-    await driver.setContext(firefox.Context.CHROME);
-    const diag = await driver.executeScript(
-      `const storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
-       const messages = Services.console.getMessageArray() ?? [];
-       const events = storage.getEvents();
-       return {
-         remote: Services.prefs.getBoolPref("extensions.webextensions.remote", null),
-         messages: messages.length,
-         messagesMentioningProbe: messages.filter((m) => String(m.message ?? m.errorMessage).includes("e2e probe")).length,
-         events: events.length,
-         eventSample: events.slice(-5).map((e) => [e.level, e.filename, e.addonId, String(e.arguments?.[0])])
-       };`
-    );
-    await driver.setContext(firefox.Context.CONTENT);
-    assert.fail(`the probe was not collected; got ${JSON.stringify(errors)}; diagnostics ${JSON.stringify(diag)}`);
-  }
+  assert.ok(errors.some((line) => line.includes("e2e probe")), `console.error was not collected; got ${JSON.stringify(errors)}`);
+  assert.ok(errors.some((line) => line.includes("e2e uncaught probe")), `the exception was not collected; got ${JSON.stringify(errors)}`);
 });
 
 test("1. both pages load without console errors", async () => {
