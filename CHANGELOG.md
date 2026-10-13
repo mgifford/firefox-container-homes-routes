@@ -33,6 +33,10 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   id, with recoverable errors (no container chosen, container removed,
   private browsing, unsupported browser), and detect containers shared
   between account contexts. Not yet used by any command.
+- Add "Open routed link" to the link context menu, with an "Open routed
+  link in" submenu for a one-time choice of destination. The menu text
+  says where the link will open, or what to fix when it can't be routed.
+  Hidden in private windows. Adds the `menus` permission.
 
 ### Refactoring
 

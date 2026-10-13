@@ -87,6 +87,26 @@ Then, in the temporary profile:
 | 5.5 | In Preferences, tick **Automatically add new tabs to their container's tab group** and save. Open a new Work tab. | The new tab joins the Work group. | |
 | 5.6 | Untick the option, save, open a new Work tab. | The new tab is not grouped. | |
 
+### Open routed link
+
+Load the demo routing config first (`docs/demo/README.md`), so the
+Drupal, Personal AI, Work development and Misc containers exist and are
+bound.
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 7.1 | Before loading any routing config, right-click a web link. | **Open routed link** is greyed out and says no routing is set up; **Open routed link in** is not shown. | |
+| 7.2 | Right-click a link to `https://www.drupal.org/project/claro/issues/3565271`. | The item reads "Open routed link in Drupal (Claro)". | |
+| 7.3 | Click it. | A new tab opens next to the current one, in the Drupal container (container colour on the tab). | |
+| 7.4 | Right-click a link to `https://claude.ai/`. Open **Open routed link in**. | The submenu lists Work development (Work) first, then the other destinations. | |
+| 7.5 | Choose Work development. Then right-click the same link again. | The tab opens in Work development. The main item still says Personal AI: the choice was one-time. | |
+| 7.6 | Right-click a link to `https://accounts.google.com/`. | The item offers to open the sign-in in this container; there is no submenu. | |
+| 7.7 | Remove the Drupal container in Settings, then right-click the Claro link. | The item is greyed out and says the container for "Drupal" was removed. | |
+| 7.8 | Open a private window and right-click any web link. | Neither routed-link item is shown. | |
+| 7.9 | Use the keyboard: focus a link, press Shift+F10 (or the context-menu key), and arrow to the items. | Both items and the submenu can be reached and used without a mouse; a screen reader reads the full item text. | |
+| 7.10 | Reload the add-on (`about:debugging`, **Reload**), then repeat 7.2. | The items appear once, not duplicated, with up-to-date text. | |
+| 7.11 | Restart Firefox (needs an installed build, not a temporary add-on). | The menu items are still present after the restart. | |
+
 ### Accessibility of the options page
 
 | # | Step | Expected | Result |
