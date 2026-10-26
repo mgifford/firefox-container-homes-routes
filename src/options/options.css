@@ -100,14 +100,6 @@ form > button {
   margin-bottom: 1.5rem;
 }
 
-.file-button {
-  padding: 0.45rem 0.8rem;
-  font: inherit;
-  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 #status {
   min-height: 1.25rem;
 }
