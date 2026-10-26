@@ -1,5 +1,6 @@
 const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
+const DEFAULT_COOKIE_STORE_ID = "firefox-default";
 
 const form = document.querySelector("#config");
 const status = document.querySelector("#status");
@@ -163,24 +164,26 @@ form.addEventListener("submit", async (event) => {
 });
 
 function buildExport(containers, homes, slots) {
-  const allContainers = [
-    { cookieStoreId: "firefox-default", name: "No container / Default" },
-    ...containers
-  ];
+  const defaultEntry = {
+    cookieStoreId: DEFAULT_COOKIE_STORE_ID,
+    homeUrl: homes[DEFAULT_COOKIE_STORE_ID],
+    slots: slots[DEFAULT_COOKIE_STORE_ID] || {}
+  };
 
-  const exportedContainers = allContainers
-    .map(({ cookieStoreId, name }) => ({
-      cookieStoreId,
-      label: name,
-      homeUrl: homes[cookieStoreId],
-      slots: slots[cookieStoreId] || {}
-    }))
-    .filter(({ homeUrl, slots: s }) => homeUrl || Object.keys(s).length > 0);
+  // Export every container with its identity (name, icon, color) so the import
+  // can match by name or recreate it, even if cookieStoreIds differ.
+  const exportedContainers = containers.map(({ cookieStoreId, name, icon, color }) => ({
+    name,
+    icon,
+    color,
+    homeUrl: homes[cookieStoreId],
+    slots: slots[cookieStoreId] || {}
+  }));
 
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    containers: exportedContainers
+    containers: [defaultEntry, ...exportedContainers]
   };
 }
 
@@ -216,28 +219,61 @@ importInput.addEventListener("change", async () => {
     return;
   }
 
-  if (data.schemaVersion !== SCHEMA_VERSION || !Array.isArray(data.containers)) {
+  if (![1, SCHEMA_VERSION].includes(data.schemaVersion) || !Array.isArray(data.containers)) {
     status.textContent = "Could not import: unrecognized file format.";
     return;
   }
 
   const confirmed = confirm(
-    `Replace all current settings with the ${data.containers.length} container(s) in this file?`
+    `Replace all current settings with the ${data.containers.length} container(s) in this file? ` +
+      "Containers that don't exist yet (by name) will be created."
   );
   if (!confirmed) return;
 
   const homes = {};
   const slots = {};
+  const existing = await browser.contextualIdentities.query({});
+  const claimed = new Set();
+  let created = 0;
 
   for (const container of data.containers) {
-    if (!container || typeof container.cookieStoreId !== "string") continue;
-    if (container.homeUrl) homes[container.cookieStoreId] = container.homeUrl;
-    if (container.slots) slots[container.cookieStoreId] = container.slots;
+    if (!container) continue;
+
+    let cookieStoreId;
+    if (container.cookieStoreId === DEFAULT_COOKIE_STORE_ID) {
+      cookieStoreId = DEFAULT_COOKIE_STORE_ID;
+    } else if (data.schemaVersion === 1) {
+      // Legacy exports only carry ids.
+      if (typeof container.cookieStoreId !== "string") continue;
+      cookieStoreId = container.cookieStoreId;
+    } else {
+      if (typeof container.name !== "string") continue;
+      const match = existing.find(
+        (identity) => identity.name === container.name && !claimed.has(identity.cookieStoreId)
+      );
+      if (match) {
+        cookieStoreId = match.cookieStoreId;
+      } else {
+        const identity = await browser.contextualIdentities.create({
+          name: container.name,
+          icon: container.icon || "fingerprint",
+          color: container.color || "blue"
+        });
+        cookieStoreId = identity.cookieStoreId;
+        created++;
+      }
+      claimed.add(cookieStoreId);
+    }
+
+    if (container.homeUrl) homes[cookieStoreId] = container.homeUrl;
+    if (container.slots && Object.keys(container.slots).length > 0) {
+      slots[cookieStoreId] = container.slots;
+    }
   }
 
   await browser.storage.local.set({ homes, slots });
-  status.textContent = "Imported.";
   await load();
+  status.textContent = created > 0 ? `Imported; created ${created} container(s).` : "Imported.";
 });
 
 load().catch((error) => {

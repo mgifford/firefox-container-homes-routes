@@ -26,8 +26,9 @@ window per container, and sort them (app slots first).
   closed or the browser restarts, the next press falls back to matching by
   the slot URL's origin, or opens a fresh tab if nothing matches.
 - Export your configured home URLs and slots to a JSON file, and import them
-  back in (on this device or another). Importing replaces the current
-  configuration after a confirmation prompt.
+  back in (on this device or another). Containers are matched by name, and
+  any that don't exist yet are created with the exported icon and color.
+  Importing replaces the current configuration after a confirmation prompt.
 - Press **Alt+Shift+0** to group and sort the tabs in the current window:
   one native tab group per container (plus a "No Container" group), each
   with its configured slot tabs sorted to the front in slot order.

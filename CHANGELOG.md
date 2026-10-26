@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and commit
 messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
+## [Unreleased]
+
+### Features
+
+- Config export now includes every container's name, icon and color. On
+  import, containers are matched by name; missing ones are created with the
+  exported icon and color, so imports work even when container ids or order
+  differ. Older (id-based) export files still import as before.
+
 ## [0.5.0] - 2026-08-21
 
 ### Features
