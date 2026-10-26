@@ -25,7 +25,7 @@ window per container, and sort them (app slots first).
   channels or Gmail threads) doesn't break the binding. If that tab is
   closed or the browser restarts, the next press falls back to matching by
   the slot URL's origin, or opens a fresh tab if nothing matches.
-- Export your configured home URLs and slots to a JSON file, and import them
+- Export your configured home URLs, slots and keyboard shortcuts to a JSON file, and import them
   back in (on this device or another). Containers are matched by name, and
   any that don't exist yet are created with the exported icon and color.
   Importing replaces the current configuration after a confirmation prompt.

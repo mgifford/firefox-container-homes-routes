@@ -163,7 +163,7 @@ form.addEventListener("submit", async (event) => {
   saveButton.disabled = true;
 });
 
-function buildExport(containers, homes, slots) {
+function buildExport(containers, homes, slots, commands) {
   const defaultEntry = {
     cookieStoreId: DEFAULT_COOKIE_STORE_ID,
     homeUrl: homes[DEFAULT_COOKIE_STORE_ID],
@@ -183,7 +183,8 @@ function buildExport(containers, homes, slots) {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    containers: [defaultEntry, ...exportedContainers]
+    containers: [defaultEntry, ...exportedContainers],
+    shortcuts: Object.fromEntries(commands.map(({ name, shortcut }) => [name, shortcut || ""]))
   };
 }
 
@@ -193,7 +194,8 @@ exportButton.addEventListener("click", async () => {
     "slots"
   ]);
   const containers = await browser.contextualIdentities.query({});
-  const data = buildExport(containers, homes, slots);
+  const commands = await browser.commands.getAll();
+  const data = buildExport(containers, homes, slots, commands);
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json"
@@ -272,7 +274,25 @@ importInput.addEventListener("change", async () => {
   }
 
   await browser.storage.local.set({ homes, slots });
+  // Older exports have no shortcuts; leave the current ones alone then.
+  const failedShortcuts = [];
+  if (data.shortcuts && typeof data.shortcuts === "object") {
+    const knownCommands = new Set((await browser.commands.getAll()).map(({ name }) => name));
+    for (const [name, shortcut] of Object.entries(data.shortcuts)) {
+      if (!knownCommands.has(name) || typeof shortcut !== "string") continue;
+      try {
+        await browser.commands.update({ name, shortcut });
+      } catch {
+        failedShortcuts.push(name);
+      }
+    }
+  }
+
   await load();
+  if (failedShortcuts.length > 0) {
+    status.textContent = `Imported, but could not set shortcuts for: ${failedShortcuts.join(", ")}.`;
+    return;
+  }
   status.textContent = created > 0 ? `Imported; created ${created} container(s).` : "Imported.";
 });
 

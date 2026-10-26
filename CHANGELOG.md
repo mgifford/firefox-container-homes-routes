@@ -12,6 +12,8 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
   import, containers are matched by name; missing ones are created with the
   exported icon and color, so imports work even when container ids or order
   differ. Older (id-based) export files still import as before.
+- Config export/import now includes keyboard shortcuts, including any you
+  customized in Firefox's "Manage Extension Shortcuts".
 
 ## [0.5.0] - 2026-08-21
 
