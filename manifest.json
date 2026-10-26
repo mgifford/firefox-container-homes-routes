@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Container Homes",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "description": "Set a home URL and up to 9 app slots per Firefox container, then jump to them with the toolbar button or Alt+Shift+Home/1-9.",
   "homepage_url": "https://github.com/rolfkleef/firefox-container-homes#readme",
 

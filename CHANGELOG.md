@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and commit
 messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
+## [0.6.1] - 2026-10-26
+
+### Bug Fixes
+
+- Slot shortcuts no longer switch to another slot's tab when both slots are
+  on the same domain (e.g. two Outlook accounts); the second slot now opens
+  its own tab.
+
+## [0.6.0] - 2026-10-26
+
+### Features
+
+- Config export now includes every container's name, icon and color. On
+  import, containers are matched by name; missing ones are created with the
+  exported icon and color, so imports work even when container ids or order
+  differ. Older (id-based) export files still import as before.
+- Config export/import now includes keyboard shortcuts, including any you
+  customized in Firefox's "Manage Extension Shortcuts".
+
 ## [0.5.0] - 2026-08-21
 
 ### Features
@@ -111,6 +130,11 @@ messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1
 - Add a README covering installation, usage, permissions, development, and
   the release process.
 
+[0.6.1]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.6.1
+[0.6.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.6.0
+[0.5.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.5.0
+[0.4.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.4.0
+[0.3.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.3.0
 [0.2.2]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.2.2
 [0.2.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rolfkleef/firefox-container-homes/releases/tag/v0.1.0

@@ -1,5 +1,6 @@
 const SLOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
+const DEFAULT_COOKIE_STORE_ID = "firefox-default";
 
 const form = document.querySelector("#config");
 const status = document.querySelector("#status");
@@ -162,25 +163,28 @@ form.addEventListener("submit", async (event) => {
   saveButton.disabled = true;
 });
 
-function buildExport(containers, homes, slots) {
-  const allContainers = [
-    { cookieStoreId: "firefox-default", name: "No container / Default" },
-    ...containers
-  ];
+function buildExport(containers, homes, slots, commands) {
+  const defaultEntry = {
+    cookieStoreId: DEFAULT_COOKIE_STORE_ID,
+    homeUrl: homes[DEFAULT_COOKIE_STORE_ID],
+    slots: slots[DEFAULT_COOKIE_STORE_ID] || {}
+  };
 
-  const exportedContainers = allContainers
-    .map(({ cookieStoreId, name }) => ({
-      cookieStoreId,
-      label: name,
-      homeUrl: homes[cookieStoreId],
-      slots: slots[cookieStoreId] || {}
-    }))
-    .filter(({ homeUrl, slots: s }) => homeUrl || Object.keys(s).length > 0);
+  // Export every container with its identity (name, icon, color) so the import
+  // can match by name or recreate it, even if cookieStoreIds differ.
+  const exportedContainers = containers.map(({ cookieStoreId, name, icon, color }) => ({
+    name,
+    icon,
+    color,
+    homeUrl: homes[cookieStoreId],
+    slots: slots[cookieStoreId] || {}
+  }));
 
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    containers: exportedContainers
+    containers: [defaultEntry, ...exportedContainers],
+    shortcuts: Object.fromEntries(commands.map(({ name, shortcut }) => [name, shortcut || ""]))
   };
 }
 
@@ -190,7 +194,8 @@ exportButton.addEventListener("click", async () => {
     "slots"
   ]);
   const containers = await browser.contextualIdentities.query({});
-  const data = buildExport(containers, homes, slots);
+  const commands = await browser.commands.getAll();
+  const data = buildExport(containers, homes, slots, commands);
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json"
@@ -203,55 +208,105 @@ exportButton.addEventListener("click", async () => {
   URL.revokeObjectURL(url);
 });
 
-// Turns a parsed export file into { homes, slots }, or throws an Error
-// describing the first problem found. Nothing is stored unless the whole
-// file validates, so a bad file can't leave a half-imported config.
+// Firefox's contextualIdentities values; anything else falls back to a
+// default so a file from a newer Firefox still imports.
+const CONTAINER_ICONS = [
+  "fingerprint", "briefcase", "dollar", "cart", "circle", "gift", "vacation",
+  "food", "fruit", "pet", "tree", "chill", "fence"
+];
+const CONTAINER_COLORS = [
+  "blue", "turquoise", "green", "yellow", "orange", "red", "pink", "purple", "toolbar"
+];
+
+// Turns a parsed export file into { schemaVersion, entries, shortcuts }, or
+// throws an Error describing the first problem found. Nothing is stored or
+// created unless the whole file validates, so a bad file can't leave a
+// half-imported config.
 function parseImport(data) {
   if (
     !data ||
-    data.schemaVersion !== SCHEMA_VERSION ||
+    typeof data !== "object" ||
+    ![1, SCHEMA_VERSION].includes(data.schemaVersion) ||
     !Array.isArray(data.containers)
   ) {
     throw new Error("unrecognized file format.");
   }
 
-  const homes = {};
-  const slots = {};
+  const entries = data.containers.map((container) => {
+    if (!container || typeof container !== "object") {
+      throw new Error("a container entry is not an object.");
+    }
 
-  for (const container of data.containers) {
-    const cookieStoreId = container?.cookieStoreId;
-    if (typeof cookieStoreId !== "string" || !cookieStoreId) {
-      throw new Error("a container entry has no cookieStoreId.");
+    // The default container is keyed by its fixed id in every version; v1
+    // files key all containers by id, v2 files by name.
+    let entry;
+    if (container.cookieStoreId === DEFAULT_COOKIE_STORE_ID || data.schemaVersion === 1) {
+      const { cookieStoreId } = container;
+      if (typeof cookieStoreId !== "string" || !cookieStoreId) {
+        throw new Error("a container entry has no cookieStoreId.");
+      }
+      entry = { cookieStoreId, label: cookieStoreId };
+    } else {
+      const { name } = container;
+      if (typeof name !== "string" || !name.trim()) {
+        throw new Error("a container entry has no name.");
+      }
+      entry = {
+        name,
+        icon: CONTAINER_ICONS.includes(container.icon) ? container.icon : "fingerprint",
+        color: CONTAINER_COLORS.includes(container.color) ? container.color : "blue",
+        label: name
+      };
     }
 
     if (container.homeUrl) {
-      homes[cookieStoreId] = parseImportedUrl(container.homeUrl, cookieStoreId);
+      entry.homeUrl = parseImportedUrl(container.homeUrl, entry.label);
     }
 
+    entry.slots = {};
     if (container.slots !== undefined) {
-      if (typeof container.slots !== "object" || container.slots === null) {
-        throw new Error(`slots for ${cookieStoreId} are not an object.`);
+      if (
+        typeof container.slots !== "object" ||
+        container.slots === null ||
+        Array.isArray(container.slots)
+      ) {
+        throw new Error(`slots for ${entry.label} are not an object.`);
       }
 
       for (const [slotNumber, url] of Object.entries(container.slots)) {
-        if (!SLOT_NUMBERS.includes(Number(slotNumber))) {
-          throw new Error(`${cookieStoreId} has an unknown slot "${slotNumber}".`);
+        if (!SLOT_NUMBERS.map(String).includes(slotNumber)) {
+          throw new Error(`${entry.label} has an unknown slot "${slotNumber}".`);
         }
-        slots[cookieStoreId] ??= {};
-        slots[cookieStoreId][slotNumber] = parseImportedUrl(url, cookieStoreId);
+        entry.slots[slotNumber] = parseImportedUrl(url, entry.label);
       }
     }
+
+    return entry;
+  });
+
+  // Older exports have no shortcuts; leave the current ones alone then.
+  let shortcuts = null;
+  if (data.shortcuts !== undefined) {
+    if (
+      typeof data.shortcuts !== "object" ||
+      data.shortcuts === null ||
+      Array.isArray(data.shortcuts) ||
+      !Object.values(data.shortcuts).every((shortcut) => typeof shortcut === "string")
+    ) {
+      throw new Error("shortcuts are not a map of command names to keys.");
+    }
+    shortcuts = data.shortcuts;
   }
 
-  return { homes, slots };
+  return { schemaVersion: data.schemaVersion, entries, shortcuts };
 }
 
-function parseImportedUrl(url, cookieStoreId) {
+function parseImportedUrl(url, label) {
   try {
     if (typeof url !== "string") throw new TypeError();
     return new URL(url).href;
   } catch {
-    throw new Error(`${cookieStoreId} has an invalid URL.`);
+    throw new Error(`${label} has an invalid URL.`);
   }
 }
 
@@ -268,23 +323,71 @@ importInput.addEventListener("change", async () => {
     return;
   }
 
-  let homes;
-  let slots;
+  let parsed;
   try {
-    ({ homes, slots } = parseImport(data));
+    parsed = parseImport(data);
   } catch (error) {
     status.textContent = `Could not import: ${error.message}`;
     return;
   }
 
   const confirmed = confirm(
-    `Replace all current settings with the ${data.containers.length} container(s) in this file?`
+    `Replace all current settings with the ${parsed.entries.length} container(s) in this file? ` +
+      "Containers that don't exist yet (by name) will be created."
   );
   if (!confirmed) return;
 
+  const homes = {};
+  const slots = {};
+  const existing = await browser.contextualIdentities.query({});
+  const claimed = new Set();
+  let created = 0;
+
+  for (const entry of parsed.entries) {
+    let { cookieStoreId } = entry;
+    if (!cookieStoreId) {
+      const match = existing.find(
+        (identity) => identity.name === entry.name && !claimed.has(identity.cookieStoreId)
+      );
+      if (match) {
+        cookieStoreId = match.cookieStoreId;
+      } else {
+        const identity = await browser.contextualIdentities.create({
+          name: entry.name,
+          icon: entry.icon,
+          color: entry.color
+        });
+        cookieStoreId = identity.cookieStoreId;
+        created++;
+      }
+      claimed.add(cookieStoreId);
+    }
+
+    if (entry.homeUrl) homes[cookieStoreId] = entry.homeUrl;
+    if (Object.keys(entry.slots).length > 0) slots[cookieStoreId] = entry.slots;
+  }
+
   await browser.storage.local.set({ homes, slots });
-  status.textContent = "Imported.";
+
+  const failedShortcuts = [];
+  if (parsed.shortcuts) {
+    const knownCommands = new Set((await browser.commands.getAll()).map(({ name }) => name));
+    for (const [name, shortcut] of Object.entries(parsed.shortcuts)) {
+      if (!knownCommands.has(name)) continue;
+      try {
+        await browser.commands.update({ name, shortcut });
+      } catch {
+        failedShortcuts.push(name);
+      }
+    }
+  }
+
   await load();
+  if (failedShortcuts.length > 0) {
+    status.textContent = `Imported, but could not set shortcuts for: ${failedShortcuts.join(", ")}.`;
+    return;
+  }
+  status.textContent = created > 0 ? `Imported; created ${created} container(s).` : "Imported.";
 });
 
 load().catch((error) => {
