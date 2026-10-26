@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and commit
 messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
+## [0.6.1] - 2026-10-26
+
+### Bug Fixes
+
+- Slot shortcuts no longer switch to another slot's tab when both slots are
+  on the same domain (e.g. two Outlook accounts); the second slot now opens
+  its own tab.
+
 ## [0.6.0] - 2026-10-26
 
 ### Features

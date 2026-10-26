@@ -92,7 +92,20 @@ async function resolveSlotTab(cookieStoreId, slotNumber, url) {
   const matchPattern = matchPatternFor(url);
   if (!matchPattern) return null;
 
-  const [tab] = await browser.tabs.query({ cookieStoreId, url: matchPattern });
+  // Several slots can share an origin (e.g. two Outlook accounts), so skip
+  // tabs already bound to another slot in this container, and prefer a tab
+  // whose URL starts with this slot's URL over a mere same-origin match.
+  const { bindings = {} } = await browser.storage.session.get("bindings");
+  const ownKey = bindingKey(cookieStoreId, slotNumber);
+  const claimedTabIds = new Set(
+    Object.entries(bindings)
+      .filter(([key]) => key !== ownKey && key.startsWith(`${cookieStoreId}:`))
+      .map(([, binding]) => binding.tabId)
+  );
+
+  const candidates = (await browser.tabs.query({ cookieStoreId, url: matchPattern }))
+    .filter((candidate) => !claimedTabIds.has(candidate.id));
+  const tab = candidates.find((candidate) => candidate.url.startsWith(url)) ?? candidates[0];
   return tab ? { tab, viaBinding: false } : null;
 }
 
